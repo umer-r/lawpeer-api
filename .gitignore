@@ -7,7 +7,10 @@ __pycache__/
 *.so
 
 # generated
-Assets/generated/qrcode.png
+Assets/generated/ERD.png
+
+# For now
+*.png
 
 # Distribution / packaging
 .Python

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 
 # Import Routes
-from routes.users_routes import user_routes
+from routes.users.user_routes import user_routes
 
 load_dotenv()  # Load environment variables from .env
 
@@ -14,7 +14,7 @@ cors_origin = os.environ.get('ALLOWED_ORIGIN')
 CORS(app)
 
 # Load configuration based on environment
-config = Config().production_config
+config = Config().dev_config
 
 app.config.from_object(config)
 
