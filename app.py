@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 import os
 
 # Import Routes
-from Routes.RapidQrRoutes import rapidqr_routes
-from Routes.EncoderRoutes import encoder_routes
+from routes.users_routes import user_routes
 
 load_dotenv()  # Load environment variables from .env
 
@@ -20,8 +19,7 @@ config = Config().production_config
 app.config.from_object(config)
 
 # Register routes
-app.register_blueprint(rapidqr_routes, url_prefix='/api/rapidqr')
-app.register_blueprint(encoder_routes, url_prefix='/api/encoder')
+app.register_blueprint(user_routes, url_prefix='/api/users')
 
 app.route('/api', methods=['GET'])
 def index():
