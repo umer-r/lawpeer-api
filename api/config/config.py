@@ -1,5 +1,5 @@
-from config.dev_config import DevConfig
-from config.production_config import ProductionConfig
+from api.config.dev_config import DevConfig
+from api.config.production_config import ProductionConfig
 
 class Config:
     
