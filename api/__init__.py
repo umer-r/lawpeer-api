@@ -7,6 +7,7 @@ import os
 
 # Import Routes
 from api.routes.users.urls import user_routes
+from api.routes.admin.urls import admin_routes
 
 # Import Modules
 from api.database import db
@@ -23,13 +24,14 @@ def create_app():
     cors_origin = os.environ.get('ALLOWED_ORIGIN')
     CORS(app)
 
-    # Db init - 1
+    # Db init
     migrate = Migrate()
     db.init_app(app)
     migrate.init_app(app, db)
 
     # Register routes
     app.register_blueprint(user_routes, url_prefix='/api/users')
+    app.register_blueprint(admin_routes, url_prefix='/api/admin')
     
     return app
 

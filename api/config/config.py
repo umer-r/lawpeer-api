@@ -2,7 +2,6 @@ from api.config.dev_config import DevConfig
 from api.config.production_config import ProductionConfig
 
 class Config:
-    
     """
         Initialize Configurations
     """
