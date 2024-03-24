@@ -17,7 +17,9 @@ class User(db.Model):
     
     # Input by User Fields:
     email = db.Column(db.String(100), nullable=False, unique=True)
-    username = db.Column(db.String(100), nullable=False)
+    username = db.Column(db.String(100), nullable=False, unique=True)
+    password = db.Column(db.String(255), nullable=False)
+
     dob = db.Column(db.Date)
     country = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))

@@ -1,26 +1,27 @@
 from api.database import db
 from api.models.user import User, Lawyer, Client
+from api.utils.hasher import hash_password
 
-def create_user(username, role=None, **kwargs):
+def create_user(email, username, password, dob, country, phone_number, role=None, **kwargs):
+    
+    # Check for duplicate email or username.
+    # NOTE: Split in two by Email & Username.
+    if User.query.filter_by(email=email).first() or User.query.filter_by(username=username).first():
+        # If user with same email or username already exists, return 409 Conflict
+        return None
+
+    hashed_password = hash_password(password=password)
+    
     if role == 'lawyer':
-        new_user = Lawyer(username=username, role='lawyer', **kwargs)
+        new_user = Lawyer(email=email, username=username, password=hashed_password, dob=dob, country=country, phone_number=phone_number, **kwargs)
     elif role == 'client':
-        new_user = Client(username=username, role='client', **kwargs)
+        new_user = Client(email=email, username=username, password=hashed_password, dob=dob, country=country, phone_number=phone_number, **kwargs)
     else:
-        new_user = User(username=username, role='nan' **kwargs)
+        new_user = User(email=email, username=username, password=hashed_password, dob=dob, country=country, phone_number=phone_number, **kwargs)
+        
     db.session.add(new_user)
     db.session.commit()
-    return new_user
-
-def create_user(email, username, dob, country, phone_number, role=None, **kwargs):
-    if role == 'lawyer':
-        new_user = Lawyer(email=email, username=username, dob=dob, country=country, phone_number=phone_number, **kwargs)
-    elif role == 'client':
-        new_user = Client(email=email, username=username, dob=dob, country=country, phone_number=phone_number, **kwargs)
-    else:
-        new_user = User(email=email, username=username, dob=dob, country=country, phone_number=phone_number, **kwargs)
-    db.session.add(new_user)
-    db.session.commit()
+    
     return new_user
 
 def get_user_by_id(user_id):
@@ -42,6 +43,7 @@ def update_user(user_id, email=None, username=None, dob=None, country=None, phon
             user.country = country
         if phone_number:
             user.phone_number = phone_number
+            
         # If the user has a role-specific attributes, update them
         for key, value in kwargs.items():
             setattr(user, key, value)
@@ -56,3 +58,13 @@ def delete_user(user_id):
         db.session.commit()
         return user
     return None
+
+# Lawyer Specific
+
+def get_all_lawyers():
+    return User.query.filter_by(role='lawyer').all()
+
+# Clients Specific
+
+def get_all_clients():
+    return User.query.filter_by(role='client').all()
