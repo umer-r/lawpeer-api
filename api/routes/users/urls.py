@@ -1,9 +1,15 @@
+# Lib Imports
 from flask import Blueprint, jsonify, request
-from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients
 
+# Module Imports
+from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients
 from api.utils.status_codes import Status
 
+# ----------------------------------------------- #
+
 user_routes = Blueprint('users', __name__)
+
+# -- Lawyer Specific -- #
 
 @user_routes.route('/lawyer', methods=['POST'])
 def create_new_lawyer():
@@ -28,7 +34,8 @@ def all_lawyers():
     if lawyers:
         return jsonify([lawyer.toDict() for lawyer in lawyers]), Status.HTTP_200_OK
     return jsonify({'message': 'No lawyer user found'}), Status.HTTP_404_NOT_FOUND
-    
+
+# -- Client Specific -- #
 
 @user_routes.route('/client', methods=['POST'])
 def create_new_client():
@@ -52,6 +59,8 @@ def all_clients():
     if clients:
         return jsonify([client.toDict() for client in clients]), Status.HTTP_200_OK
     return jsonify({'message': 'No client user found'}), Status.HTTP_404_NOT_FOUND
+
+# -- General User Routes -- #
 
 @user_routes.route('/<user_id>', methods=['GET'])
 def get_user(user_id):
@@ -81,5 +90,3 @@ def delete_existing_user(user_id):
     if deleted_user:
         return jsonify({'message': f'User with id {user_id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
-
-

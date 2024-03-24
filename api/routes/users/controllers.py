@@ -1,6 +1,11 @@
+# Module Imports
 from api.database import db
 from api.models.user import User, Lawyer, Client
 from api.utils.hasher import hash_password
+
+# ----------------------------------------------- #
+
+# -- General User Controller -- #
 
 def create_user(email, username, password, dob, country, phone_number, role=None, **kwargs):
     
@@ -59,12 +64,12 @@ def delete_user(user_id):
         return user
     return None
 
-# Lawyer Specific
+# -- Lawyers Specific -- #
 
 def get_all_lawyers():
     return User.query.filter_by(role='lawyer').all()
 
-# Clients Specific
+# -- Clients Specific -- #
 
 def get_all_clients():
     return User.query.filter_by(role='client').all()
