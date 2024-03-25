@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
 import os
 
 # Import Routes
@@ -21,6 +22,11 @@ def create_app():
     config = Config().dev_config
     app.config.from_object(config)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Configure Flask-JWT-Extended
+    app.config['JWT_SECRET_KEY'] = 'your_secret_key'
+    jwt = JWTManager(app)
+    
     cors_origin = os.environ.get('ALLOWED_ORIGIN')
     CORS(app)
 
