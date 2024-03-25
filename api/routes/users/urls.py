@@ -1,9 +1,14 @@
+"""
+    NOTE: Add missing keys error in routes.
+"""
+
 # Lib Imports
 from flask import Blueprint, jsonify, request
 
 # Module Imports
 from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients
 from api.utils.status_codes import Status
+from api.utils.helper import check_mandatory
 
 # ----------------------------------------------- #
 
@@ -14,16 +19,23 @@ user_routes = Blueprint('users', __name__)
 @user_routes.route('/lawyer', methods=['POST'])
 def create_new_lawyer():
     data = request.get_json()
+    
+    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
+    if is_missing:
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+    
     email = data.get('email')
     username = data.get('username')
     password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
     dob = data.get('dob')
     country = data.get('country')
     phone_number = data.get('phone_number')
     bar_association_id = data.get('bar_association_id')
     experience_years = data.get('experience_years')
 
-    new_lawyer = create_user(email, username, password, dob, country, phone_number, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
+    new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
     if new_lawyer is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     return jsonify(new_lawyer.toDict()), Status.HTTP_200_OK
@@ -40,15 +52,23 @@ def all_lawyers():
 @user_routes.route('/client', methods=['POST'])
 def create_new_client():
     data = request.get_json()
+    
+    
+    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
+    if is_missing:
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+    
     email = data.get('email')
     username = data.get('username')
     password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
     dob = data.get('dob')
     country = data.get('country')
     phone_number = data.get('phone_number')
     case_details = data.get('case_details')
 
-    new_client = create_user(email, username, password, dob, country, phone_number, role='client', case_details=case_details)
+    new_client = create_user(email, username, password, first_name, last_name, dob, country, phone_number, role='client', case_details=case_details)
     if new_client is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     return jsonify(new_client.toDict()), Status.HTTP_200_OK

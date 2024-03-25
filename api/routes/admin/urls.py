@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request
 # Module Imports
 from api.routes.admin.controllers import create_admin, update_admin, delete_admin, get_admin_by_id, get_all_admin
 from api.utils.status_codes import Status
+from api.utils.helper import check_mandatory
 
 # ----------------------------------------------- #
 
@@ -12,6 +13,11 @@ admin_routes = Blueprint('admin', __name__)
 @admin_routes.route('/', methods=['POST'])
 def create_new_admin():
     data = request.get_json()
+    
+    is_missing, missing_keys = check_mandatory(['email', 'password'], data)
+    if is_missing:
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+    
     email = data.get('email')
     password = data.get('password')
     phone_number = data.get('phone_number')

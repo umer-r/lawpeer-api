@@ -7,7 +7,7 @@ from api.utils.hasher import hash_password
 
 # -- General User Controller -- #
 
-def create_user(email, username, password, dob, country, phone_number, role=None, **kwargs):
+def create_user(email, username, password, first_name, last_name, dob, country, phone_number, role=None, **kwargs):
     
     # Check for duplicate email or username.
     # NOTE: Split in two by Email & Username.
@@ -18,11 +18,11 @@ def create_user(email, username, password, dob, country, phone_number, role=None
     hashed_password = hash_password(password=password)
     
     if role == 'lawyer':
-        new_user = Lawyer(email=email, username=username, password=hashed_password, dob=dob, country=country, phone_number=phone_number, **kwargs)
+        new_user = Lawyer(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, dob=dob, country=country, phone_number=phone_number, **kwargs)
     elif role == 'client':
-        new_user = Client(email=email, username=username, password=hashed_password, dob=dob, country=country, phone_number=phone_number, **kwargs)
+        new_user = Client(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, dob=dob, country=country, phone_number=phone_number, **kwargs)
     else:
-        new_user = User(email=email, username=username, password=hashed_password, dob=dob, country=country, phone_number=phone_number, **kwargs)
+        new_user = User(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, dob=dob, country=country, phone_number=phone_number, **kwargs)
         
     db.session.add(new_user)
     db.session.commit()
