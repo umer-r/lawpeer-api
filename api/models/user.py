@@ -15,19 +15,26 @@ class User(db.Model):
     created = db.Column(db.DateTime(timezone=True), default=datetime.now)                            # The Date of the Instance Creation => Created one Time when Instantiation
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)     # The Date of the Instance Update => Changed with Every Update
     
+    # Account Settings:
+    is_active = db.Column(db.Boolean, default=False, nullable=False)
+    is_suspended = db.Column(db.Boolean, default=False, nullable=False)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(150))
+    reason = db.Column(db.String(150))
+
     # Input by User Fields:
     email = db.Column(db.String(100), nullable=False, unique=True)
     username = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
-
+    
+    # Personal:
+    profile_image = db.Column(db.String(255))   # Store image path
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     address = db.Column(db.String(150))
     dob = db.Column(db.Date)
     country = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))
-    is_active = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(25))
     role = db.Column(db.String(50))  # Role can be 'lawyer' or 'client'
 
     @hybrid_property
