@@ -1,20 +1,27 @@
 """
-    TODO:   1 - Add missing keys error in routes. - Done
-            2 - Add account deactivation route.
-            3 - Add account suspension & STATUS route.
-            4 - Omit the sensitive fields from returning the users.
-            5 - Change Status 400 to 422 UNPROCESSABLE_ENTITY.
+    TODO:   1  - Add missing keys error in routes.                                       - [DONE]
+            2  - Add account deactivation/activation route.                              - [DONE]
+            3  - Add account suspension & STATUS route.                                  -
+            4  - Omit the sensitive fields from returning the users.                     - [DONE]
+            5  - Change Status 400 to 422 UNPROCESSABLE_ENTITY.                          - [DONE]
+            6  - Implement Profile picture send back functionality in get user by ID.    -
+            7  - Implement Refresh Token Logic.                                          - [HALT] -> Moved to (9).
+            8  - Implement Email verification for users.                                 -
+            9  - Change the Access Token's Settings (Time -> 7 days, Secret key).        - 
+            10 - Change JWT access to get_user_by_id().                                  - [DONE]
+            11 - Add access control - omit fields if not user or admin in (10).          - [DONE]
+            12 - Rename updated Image by users perspective (overwrite-protection).       - [Done]
 """
 
 # Lib Imports
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Module Imports
 from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account
 from api.routes.users.auth_controllers import generate_access_token, check_admin, check_user_or_admin, check_user
 from api.utils.status_codes import Status
-from api.utils.helper import check_mandatory
+from api.utils.helper import check_mandatory, omit_sensitive_fields
 
 # ----------------------------------------------- #
 
@@ -29,7 +36,7 @@ def create_new_lawyer():
     
     is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
     if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     username = data.get('username')
@@ -46,7 +53,9 @@ def create_new_lawyer():
     new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, profile_image, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
     if new_lawyer is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
-    return jsonify(new_lawyer.toDict()), Status.HTTP_200_OK
+    
+    returned_lawyer = omit_sensitive_fields(new_lawyer)
+    return jsonify(returned_lawyer), Status.HTTP_200_OK
 
 # JWT Not required - can be accessed outside authorization
 @user_routes.route('/lawyer', methods=['GET'])
@@ -65,7 +74,7 @@ def create_new_client():
     
     is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
     if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     username = data.get('username')
@@ -82,7 +91,9 @@ def create_new_client():
     if new_client is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
-    return jsonify(new_client.toDict()), Status.HTTP_200_OK
+    # Remove sensitive fields
+    returned_client = omit_sensitive_fields(new_client)
+    return jsonify(returned_client), Status.HTTP_200_OK
 
 @user_routes.route('/client', methods=['GET'])
 @jwt_required()
@@ -102,13 +113,14 @@ def all_clients():
 @user_routes.route('/<user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
-    
-    is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
-    if not is_user_or_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
     user = get_user_by_id(user_id)
     if user:
+        
+        is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
+        if not is_user_or_admin:
+            returned_user = omit_sensitive_fields(user)
+            return jsonify(returned_user), Status.HTTP_200_OK
+        
         return jsonify(user.toDict()), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
@@ -154,7 +166,7 @@ def delete_existing_user(user_id):
         return jsonify({'message': f'User with id {user_id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/<user_id>', methods=['POST'])
+@user_routes.route('/deactivate/<user_id>', methods=['POST'])
 @jwt_required()
 def deactivate_account(user_id):
     
@@ -164,27 +176,37 @@ def deactivate_account(user_id):
 
     is_missing, missing_keys = check_mandatory(['reason'], data)
     if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     reason = data.get('reason')
-    status = data.get('status')
     
     # Admin can also de-activate user account.
     is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
     if not is_user_or_admin:
+        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED  
+    
+    deactivated_user = self_deactivate_user_account(user_id=user_id, reason=reason)
+    
+    if deactivated_user is not None:
+        return jsonify({'message': f'User with id {user_id} deactivated successfully!'}), Status.HTTP_200_OK
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    
+@user_routes.route('/activate/<user_id>', methods=['GET'])
+@jwt_required()
+def activate_account(user_id):
+    
+    current_user = get_jwt_identity()
+    
+    # Admin can also activate user account.
+    is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
+    if not is_user_or_admin:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
-    is_requested_user = check_user(user=current_user, id=user_id)
-    if is_requested_user:
-        self_deactivate_user_account(user_id=user_id, reason=reason)
-        return jsonify(message=f'Account deactivated successfully!'), Status.HTTP_200_OK
+    activated_user = self_activate_user_account(user_id=user_id)
     
-    is_admin = check_admin(user=current_user)
-    if is_admin:
-        self_deactivate_user_account(user_id=user_id, reason=reason, status=status)
-        return jsonify(message=f'Account deactivated successfully!'), Status.HTTP_200_OK    
-    
-        
+    if activated_user is not None:
+        return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 # -- Auth Routes -- #
 
@@ -195,7 +217,7 @@ def login():
     
     is_missing, missing_keys = check_mandatory(['email', 'password'], data)
     if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     password = data.get('password')
@@ -205,12 +227,3 @@ def login():
         return jsonify(access_token=token), Status.HTTP_200_OK
     
     return jsonify({'message': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
-
-# Protected Endpoint for Users
-@user_routes.route('/profile', methods=['GET'])
-@jwt_required()  # Requires authentication with JWT
-def user_profile():
-    user_id = get_jwt_identity()
-    user = get_user_by_id(user_id=user_id)
-    return jsonify({'email': user.email, 'username': user.username})
-

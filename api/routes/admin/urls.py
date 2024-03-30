@@ -31,7 +31,7 @@ def create_new_admin():
     
     is_missing, missing_keys = check_mandatory(['email', 'password'], data)
     if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     password = data.get('password')
@@ -114,7 +114,7 @@ def login():
     # Check mandatory fields/keys
     is_missing, missing_keys = check_mandatory(['email', 'password'], data)
     if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_400_BAD_REQUEST
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     password = data.get('password')

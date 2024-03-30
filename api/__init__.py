@@ -1,5 +1,4 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -18,7 +17,12 @@ load_dotenv()  # Load environment variables from .env
 
 # Flask app configs
 def create_app():  
-    app = Flask(__name__)
+    app = Flask(
+            __name__,
+            static_url_path='/static', 
+            static_folder='assets/uploaded',
+        )
+
     config = Config().dev_config
     app.config.from_object(config)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -38,6 +42,8 @@ def create_app():
     # Register routes
     app.register_blueprint(user_routes, url_prefix='/api/users')
     app.register_blueprint(admin_routes, url_prefix='/api/admin')
+    
+    print(app.url_map)
     
     return app
 

@@ -1,3 +1,8 @@
+"""
+    TODO:   1 - CASCADE upon deletion from users.
+            2 - Remove status or reason field from users.
+"""
+
 from api.database import db
 
 from datetime import datetime

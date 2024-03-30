@@ -1,7 +1,9 @@
 """
-    TODO:   1 - Add a Suspended account & Reason controller.
-            2 - If admin is de activating an account change the 'status' field in model.
-            3 - Modify create_user to store profile images as paths.
+    TODO:   1 - Add a Suspended account & Reason controller.                                -
+            2 - If admin is de activating an account change the 'status' field in model.    - [HALT]
+            3 - Modify create_user to store profile images as paths.                        - [DONE]
+            4 - Add a check if ATTRIBUTE/FIELD is already changed (e.g. user already deactivated), send appropriate status code back.
+            5 - In create_user(), Split in two by Email & Username.                         - 
 """
 
 # Lib Imports:
@@ -12,7 +14,7 @@ import os
 from api.database import db
 from api.models.user import User, Lawyer, Client
 from api.utils.hasher import hash_password
-from api.utils.helper import allowed_file, get_upload_folder
+from api.utils.helper import allowed_file, get_upload_folder, rename_profile_image
 
 # ----------------------------------------------- #
 
@@ -21,7 +23,6 @@ from api.utils.helper import allowed_file, get_upload_folder
 def create_user(email, username, password, first_name, last_name, dob, country, phone_number, profile_image=None, role=None, **kwargs):
     
     # Check for duplicate email or username.
-    # TODO: Split in two by Email & Username.
     if User.query.filter_by(email=email).first() or User.query.filter_by(username=username).first():
         # If user with same email or username already exists, return 409 Conflict
         return None
@@ -37,7 +38,7 @@ def create_user(email, username, password, first_name, last_name, dob, country, 
     
     UPLOAD_FOLDER = get_upload_folder()
     if profile_image:
-        filename = secure_filename(profile_image.filename)
+        filename = secure_filename(rename_profile_image(profile_image))
         if allowed_file(filename):
             profile_image_path = os.path.join(UPLOAD_FOLDER, filename)
             profile_image.save(profile_image_path)
@@ -49,7 +50,18 @@ def create_user(email, username, password, first_name, last_name, dob, country, 
     return new_user
 
 def get_user_by_id(user_id):
-    return User.query.get(user_id)
+    """
+        Retrieve a user by their ID.
+
+        Args:
+            user_id (int): The ID of the user to retrieve.
+
+        Returns:
+            User: The user object if found, otherwise None.
+    """
+    
+    user = User.query.get(user_id)
+    return user if user else None
 
 def get_all_users():
     return User.query.all()
@@ -83,11 +95,11 @@ def delete_user(user_id):
         return user
     return None
 
-def self_deactivate_user_account(user_id, reason):
+def self_deactivate_user_account(user_id, reason=None):
     user = User.query.get(user_id)
     if user:
         user.is_active = False
-        # user.reason = reason -- reason is the new User model field.
+        user.reason = reason
         db.session.commit()
         return user
     return None
