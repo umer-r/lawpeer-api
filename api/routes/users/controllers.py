@@ -42,7 +42,9 @@ def create_user(email, username, password, first_name, last_name, dob, country, 
         if allowed_file(filename):
             profile_image_path = os.path.join(UPLOAD_FOLDER, filename)
             profile_image.save(profile_image_path)
-            new_user.profile_image = profile_image_path    
+            
+            # Refactor if gives a bug:
+            new_user.profile_image = os.path.join('/static', filename).replace('\\', '/')
     
     db.session.add(new_user)
     db.session.commit()
