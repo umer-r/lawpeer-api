@@ -4,9 +4,9 @@
             3  - Add account suspension & STATUS route.                                  -
             4  - Omit the sensitive fields from returning the users.                     - [DONE]
             5  - Change Status 400 to 422 UNPROCESSABLE_ENTITY.                          - [DONE]
-            6  - Implement Profile picture send back functionality in get user by ID.    -
+            6  - Implement Profile picture send back functionality in get user by ID.    - [DONE]
             7  - Implement Refresh Token Logic.                                          - [HALT] -> Moved to (9).
-            8  - Implement Email verification for users.                                 -
+            8  - Implement Email verification for users.                                 - 
             9  - Change the Access Token's Settings (Time -> 7 days, Secret key).        - 
             10 - Change JWT access to get_user_by_id().                                  - [DONE]
             11 - Add access control - omit fields if not user or admin in (10).          - [DONE]

@@ -25,11 +25,11 @@ def create_app():
 
     config = Config().dev_config
     app.config.from_object(config)
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # Configure Flask-JWT-Extended
-    app.config['JWT_SECRET_KEY'] = 'your_secret_key'
     jwt = JWTManager(app)
+    
+    # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # # Configure Flask-JWT-Extended
+    # app.config['JWT_SECRET_KEY'] = 'your_secret_key'
     
     cors_origin = os.environ.get('ALLOWED_ORIGIN')
     CORS(app)
