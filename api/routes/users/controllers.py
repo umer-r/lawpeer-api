@@ -13,7 +13,7 @@ import os
 # Module Imports:
 from api.database import db
 from api.models.user import User, Lawyer, Client
-from api.utils.hasher import hash_password
+from api.utils.hasher import hash_password, verify_password
 from api.utils.helper import allowed_file, get_upload_folder, rename_profile_image
 
 # ----------------------------------------------- #
@@ -68,7 +68,13 @@ def get_user_by_id(user_id):
 def get_all_users():
     return User.query.all()
 
-def update_user(user_id, email=None, username=None, dob=None, country=None, phone_number=None, **kwargs):
+def update_user(
+        user_id, email=None, username=None, 
+        dob=None, country=None, phone_number=None,
+        first_name=None, last_name=None, is_active=None, 
+        is_suspended=None, status=None, reason=None,
+        profile_image=None, address=None, 
+        **kwargs):
     user = User.query.get(user_id)
     if user:
         if email:
@@ -112,6 +118,17 @@ def self_activate_user_account(user_id):
         user.is_active = True
         db.session.commit()
         return user
+    return None
+
+def change_password(user_id, prev_password, new_password):
+    user = User.query.get(user_id)
+    if user:
+        if verify_password(prev_password, user.password):
+            user.password = hash_password(new_password)
+            db.session.commit()
+            return user
+        else:
+            return False
     return None
     
 # -- Lawyers Specific -- #

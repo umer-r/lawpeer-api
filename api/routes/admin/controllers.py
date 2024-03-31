@@ -47,5 +47,33 @@ def delete_admin(id):
 def get_admin_by_id(id):
     return Admin.query.get(id)
 
+def get_admin_by_email(email):
+    """
+        Retrieve an admin by email.
+        
+        Args:
+            email (str): The email of the admin to retrieve.
+            
+        Returns:
+            Admin: The admin object if found, otherwise None.
+    """
+    return Admin.query.filter_by(email=email).first()
+
 def get_all_admin():
     return Admin.query.all()
+
+def initialize_admin():
+    # Check if admin already exists
+    existing_admin = get_admin_by_email("admin@example.com")  # Replace with your desired admin email
+    if existing_admin:
+        print("Admin already exists.")
+        return
+    
+    # Create admin
+    admin_data = {
+        "email": "admin@example.com",  # Replace with your desired admin email
+        "password": "mypass123",  # Replace with your desired admin password
+        "phone_number": "+923336783222"  # Replace with your desired admin phone number
+    }
+    create_admin(**admin_data)
+    print("Admin created successfully.")

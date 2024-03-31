@@ -7,19 +7,22 @@
             6  - Implement Profile picture send back functionality in get user by ID.    - [DONE]
             7  - Implement Refresh Token Logic.                                          - [HALT] -> Moved to (9).
             8  - Implement Email verification for users.                                 - 
-            9  - Change the Access Token's Settings (Time -> 7 days, Secret key).        - 
+            9  - Change the Access Token's Settings (Time -> 7 days, Secret key).        - [DONE]
             10 - Change JWT access to get_user_by_id().                                  - [DONE]
             11 - Add access control - omit fields if not user or admin in (10).          - [DONE]
-            12 - Rename updated Image by users perspective (overwrite-protection).       - [Done]
+            12 - Rename updated Image by users perspective (overwrite-protection).       - [DONE]
+            13 - Add user password change route.                                         - [DONE]
+            14 - Change update existing user controller to handle all user updation.     - []
+            15 - FIX: Cascade in lawyers & clients table upon user deletion              - 
 """
 
 # Lib Imports
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Module Imports
-from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account
-from api.routes.users.auth_controllers import generate_access_token, check_admin, check_user_or_admin, check_user
+from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password
+from api.routes.users.auth_controllers import generate_access_token, check_admin, check_user_or_admin
 from api.utils.status_codes import Status
 from api.utils.helper import check_mandatory, omit_sensitive_fields
 
@@ -204,8 +207,39 @@ def activate_account(user_id):
     
     activated_user = self_activate_user_account(user_id=user_id)
     
+    # Test the following logic:
     if activated_user is not None:
         return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+
+@user_routes.route('/change_password/<user_id>', methods=['POST'])
+@jwt_required()
+def change_user_password(user_id):
+    
+    current_user = get_jwt_identity()
+    data = request.get_json()
+    
+    # Mandatory fields check:
+    is_missing, missing_keys = check_mandatory(['prev_pass', 'new_pass'], data)
+    if is_missing:
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    # Access control check:
+    is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
+    if not is_user_or_admin:
+        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
+    
+    prev_pass = data.get('prev_pass')
+    new_pass = data.get('new_pass')
+    
+    changed_user_password = change_password(user_id=user_id, prev_password=prev_pass, new_password=new_pass)
+    
+    if not changed_user_password:
+        return jsonify({'message': 'New password and previous password do not match!'}), Status.HTTP_400_BAD_REQUEST
+    
+    if changed_user_password is not None:
+        return jsonify({'message': f'Password change operation for User with id {user_id} successful!'}), Status.HTTP_200_OK
+    
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 # -- Auth Routes -- #
