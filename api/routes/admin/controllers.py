@@ -96,6 +96,7 @@ def delete_admin(id):
         Returns:
             Admin: The deleted admin object if successful, otherwise None.
     """
+    
     admin = Admin.query.get(id)
     if admin:
         db.session.delete(admin)
@@ -136,6 +137,7 @@ def get_all_admin():
         Returns:
             list: List of admin objects.
     """
+    
     return Admin.query.all()
         
 def create_super_admin():
