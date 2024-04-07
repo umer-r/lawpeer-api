@@ -41,6 +41,8 @@ from api.routes.admin.controllers import create_super_admin
 from api.database import db
 from api.config.config import Config
 
+# ----------------------------------------------- #
+
 # Load environment variables from .env:
 load_dotenv()  
 
