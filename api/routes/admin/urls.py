@@ -1,7 +1,12 @@
 """
-    TODO:   1 - Add JWT logic secure on all routes (Only admins can access these routes). -- Done
-            2 - Add DOC strings on each func.
-    
+    DESC:
+        Blueprint for Admin related routes.
+        
+    TODO:   1 - Add JWT logic secure on all routes (Only admins can access these routes).   - [DONE]
+            2 - Add DOC strings on each func.                                               -
+            3 - Implement Super admin logic.                                                - [DONE]
+            4 - Test each of the following routes.                                          - [DONE]
+            5 - Omit sensitive fields.                                                      - []
 """
 
 # Lib Imports
@@ -10,7 +15,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Module Imports
 from api.routes.admin.controllers import create_admin, update_admin, delete_admin, get_admin_by_id, get_all_admin
-from api.routes.admin.auth_controllers import generate_access_token, check_admin, check_current_admin
+from api.routes.admin.auth_controllers import generate_access_token, check_admin, check_current_admin, check_super_and_current_admin, check_super_admin
 from api.utils.status_codes import Status
 from api.utils.helper import check_mandatory
 
@@ -22,9 +27,9 @@ admin_routes = Blueprint('admin', __name__)
 @jwt_required()
 def create_new_admin():
     
-    # Only (all) Admins can access
-    is_admin = check_admin(get_jwt_identity())
-    if not is_admin:
+    # Only (super) Admin can access:
+    is_super_admin = check_super_admin(get_jwt_identity())
+    if not is_super_admin:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     data = request.get_json()
@@ -78,8 +83,8 @@ def get_admin(id):
 def update_existing_admin(id):
     
     # Admin Should be the same as the requested admin.
-    is_requested_admin = check_current_admin(admin=get_jwt_identity(), id=id)
-    if not is_requested_admin:
+    is_requested_admin_or_super = check_super_and_current_admin(admin=get_jwt_identity(), id=id)
+    if not is_requested_admin_or_super:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     data = request.get_json()
@@ -94,8 +99,8 @@ def update_existing_admin(id):
 def delete_existing_admin(id):
     
     # Admin Should be the same as the requested admin.
-    is_requested_admin = check_current_admin(admin=get_jwt_identity(), id=id)
-    if not is_requested_admin:
+    is_requested_admin_or_super = check_super_and_current_admin(admin=get_jwt_identity(), id=id)
+    if not is_requested_admin_or_super:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     deleted_admin = delete_admin(id)
