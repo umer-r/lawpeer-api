@@ -1,7 +1,7 @@
 """
-    TODO:   1  - Add missing keys error in routes.                                       - [DONE]
+    FIXME:  1  - Add missing keys error in routes.                                       - [DONE]
             2  - Add account deactivation/activation route.                              - [DONE]
-            3  - Add account suspension & STATUS route.                                  -
+            3  - Add account suspension & STATUS route.                                  - [DONE]
             4  - Omit the sensitive fields from returning the users.                     - [DONE]
             5  - Change Status 400 to 422 UNPROCESSABLE_ENTITY.                          - [DONE]
             6  - Implement Profile picture send back functionality in get user by ID.    - [DONE]
@@ -12,8 +12,16 @@
             11 - Add access control - omit fields if not user or admin in (10).          - [DONE]
             12 - Rename updated Image by users perspective (overwrite-protection).       - [DONE]
             13 - Add user password change route.                                         - [DONE]
-            14 - Change update existing user controller to handle all user updation.     - []
-            15 - FIX: Cascade in lawyers & clients table upon user deletion              - 
+            14 - Change update existing user controller to handle all user updation.     - [DONE]
+            15 - FIX: Cascade in lawyers & clients table upon user deletion              - [DONE] -> VIA Controller
+            16 - Substitute prefixes in routes with (-) e.g. de-activate                 - []
+            17 - Add Comments.                                                           - []
+    
+    TODO:
+        Refactor:
+            1 - Make code more reusable.
+            2 - Separate unconcering logic.
+            3 - Remove redundant bits.
 """
 
 # Lib Imports
@@ -35,7 +43,6 @@ user_routes = Blueprint('users', __name__)
 @user_routes.route('/lawyer', methods=['POST'])
 def create_new_lawyer():
     data = request.form
-
     
     is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
     if is_missing:
@@ -148,9 +155,10 @@ def update_existing_user(user_id):
     if not is_user_or_admin:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
-    data = request.get_json()
+    data = request.form
+    profile_image = request.files.get('profile_image')
     
-    updated_user = update_user(user_id, **data)
+    updated_user = update_user(user_id, profile_image=profile_image, **data)
     if updated_user:
         return jsonify(updated_user.toDict()), Status.HTTP_200_OK
     
@@ -169,7 +177,7 @@ def delete_existing_user(user_id):
         return jsonify({'message': f'User with id {user_id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/deactivate/<user_id>', methods=['POST'])
+@user_routes.route('/de-activate/<user_id>', methods=['POST'])
 @jwt_required()
 def deactivate_account(user_id):
     
@@ -212,7 +220,61 @@ def activate_account(user_id):
         return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/change_password/<user_id>', methods=['POST'])
+@user_routes.route('/suspend/<user_id>', methods=['POST'])
+@jwt_required()
+def suspend_account(user_id):
+    
+    current_user = get_jwt_identity()
+    
+    # Admin can also activate user account.
+    is_admin = check_admin(user=current_user)
+    if not is_admin:
+        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
+    
+    data = request.get_json()
+
+    is_missing, missing_keys = check_mandatory(['status'], data)
+    if is_missing:
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    status = data.get('status')
+    reason = data.get('reason')
+    
+    suspended_user = update_existing_user(user_id=user_id, is_suspended=True, status=status, reason=reason)
+    
+    # User exists check:
+    if suspended_user is not None:
+        return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+
+@user_routes.route('/un-suspend/<user_id>', methods=['POST'])
+@jwt_required()
+def unsuspend_account(user_id):
+    
+    current_user = get_jwt_identity()
+    
+    # Admin can also activate user account.
+    is_admin = check_admin(user=current_user)
+    if not is_admin:
+        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
+    
+    data = request.get_json()
+
+    is_missing, missing_keys = check_mandatory(['status'], data)
+    if is_missing:
+        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    status = data.get('status')
+    reason = data.get('reason')
+    
+    unsuspended_user = update_existing_user(user_id=user_id, is_suspended=False, status=status, reason=reason)
+    
+    # User exists check:
+    if unsuspended_user is not None:
+        return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+
+@user_routes.route('/change-password/<user_id>', methods=['POST'])
 @jwt_required()
 def change_user_password(user_id):
     

@@ -2,8 +2,10 @@
     TODO:   1 - Add a Suspended account & Reason controller.                                -
             2 - If admin is de activating an account change the 'status' field in model.    - [HALT]
             3 - Modify create_user to store profile images as paths.                        - [DONE]
-            4 - Add a check if ATTRIBUTE/FIELD is already changed (e.g. user already deactivated), send appropriate status code back.
+            4 - Add a check if ATTRIBUTE/FIELD is already changed 
+                (e.g. user already deactivated), send appropriate status code back.         -
             5 - In create_user(), Split in two by Email & Username.                         - 
+            6 - Error Handling on update_user()                                             -
 """
 
 # Lib Imports:
@@ -68,15 +70,25 @@ def get_user_by_id(user_id):
 def get_all_users():
     return User.query.all()
 
-def update_user(
-        user_id, email=None, username=None, 
-        dob=None, country=None, phone_number=None,
-        first_name=None, last_name=None, is_active=None, 
-        is_suspended=None, status=None, reason=None,
-        profile_image=None, address=None, 
-        **kwargs):
+def update_user(user_id, profile_image=None, email=None,
+                username=None, dob=None, country=None, 
+                phone_number=None, first_name=None, last_name=None, 
+                is_active=None, is_suspended=None, status=None, 
+                reason=None, address=None, case_details=None,
+                bar_association_id=None, experience_years=None,
+                **kwargs):
+
     user = User.query.get(user_id)
     if user:
+        # Update profile image if provided
+        if profile_image:
+            UPLOAD_FOLDER = get_upload_folder()
+            filename = secure_filename(rename_profile_image(profile_image))
+            if allowed_file(filename):
+                profile_image_path = os.path.join(UPLOAD_FOLDER, filename)
+                profile_image.save(profile_image_path)
+                user.profile_image = os.path.join('/static', filename).replace('\\', '/')
+        
         if email:
             user.email = email
         if username:
@@ -87,19 +99,65 @@ def update_user(
             user.country = country
         if phone_number:
             user.phone_number = phone_number
-            
-        # If the user has a role-specific attributes, update them
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if is_active is not None:
+            user.is_active = is_active
+        if is_suspended is not None:
+            user.is_suspended = is_suspended
+        if status:
+            user.status = status
+        if reason:
+            user.reason = reason
+        if address:
+            user.address = address
+
+        # If the user has role-specific attributes, update them
         for key, value in kwargs.items():
             setattr(user, key, value)
+        
+        # Role specific fields:
+        ## Update client specific fields
+        if case_details and user.role == 'client':
+            client = Client.query.filter_by(id=user_id).first()
+            if client:
+                client.case_details = case_details
+                
+        ## Update Lawyer specific fields:
+        if user.role == 'lawyer':
+            lawyer = Lawyer.query.filter_by(id=user_id).first()
+            if bar_association_id:
+                if lawyer:
+                    lawyer.bar_association_id = bar_association_id
+            if experience_years:
+                if lawyer:
+                    lawyer.experience_years = experience_years
+        
         db.session.commit()
         return user
+
     return None
 
 def delete_user(user_id):
     user = User.query.get(user_id)
     if user:
+        if user.role == 'lawyer':
+            # Delete from lawyers table
+            lawyer = Lawyer.query.filter_by(id=user_id).first()
+            if lawyer:
+                db.session.delete(lawyer)
+        elif user.role == 'client':
+            # Delete from clients table
+            client = Client.query.filter_by(id=user_id).first()
+            if client:
+                db.session.delete(client)
+        
+        # Delete from users table
         db.session.delete(user)
         db.session.commit()
+        
         return user
     return None
 

@@ -1,12 +1,13 @@
 """
-    TODO:   1 - CASCADE upon deletion from users.
-            2 - Remove status or reason field from users.
+    TODO:   1 - CASCADE upon deletion from users.               - [DONE] -> VIA Controller.
+            2 - Remove status or reason field from users.       - [HALT]
 """
 
 from api.database import db
 
 from datetime import datetime
 from sqlalchemy import inspect
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # ----------------------------------------------- #
@@ -88,6 +89,7 @@ class Client(User):
     
     # Additional fields specific to Client
     case_details = db.Column(db.Text)
+
 
     __mapper_args__ = {
         'polymorphic_identity': 'client',
