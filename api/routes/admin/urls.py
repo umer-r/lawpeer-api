@@ -3,7 +3,7 @@
         Blueprint for Admin related routes.
         
     TODO:   1 - Add JWT logic secure on all routes (Only admins can access these routes).   - [DONE]
-            2 - Add DOC strings on each func.                                               -
+            2 - Add DOC strings on each func.                                               - []
             3 - Implement Super admin logic.                                                - [DONE]
             4 - Test each of the following routes.                                          - [DONE]
             5 - Omit sensitive fields.                                                      - []

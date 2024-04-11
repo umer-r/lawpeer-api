@@ -4,10 +4,66 @@
 
 ***This repository hosts files for backend api of LAWPEER.PK***
 
-### Specifications
+## Specifications
 > * python >= 3.11
 > * flask
 
+## Running server on localhost (MacOS/Linux):
+### Initial setup:
+* clone the repo.
+```bash
+git clone https://github.com/umer-r/lawpeer-api.git
+```
+* open terminal in the application folder.
+```bash
+cd lawpeer-api
+```
+* Create .env file and put the following variables with modifications:
+```js
+ALLOWED_ORIGIN = 'Front end app URL (http://localhost:3000/)'
+DEVELOPMENT_DATABASE_URL = 'postgresql+psycopg2://username:password@localhost:5432/databasename'
+JWT_SECRET = 'my_secret_key'
+```
+* activate the virtual environment *(venv will be written infront of the terminal prompt line)*:
+```bash
+./venv/Scripts/activate
+```
+* Install the dependencies (only once on initial setup):
+* This step is equivalent to ```npm install```
+```bash
+pip install -r requirements.txt
+```
+* Make flask postgres migrations to initialize the database:
+```bash
+flask db init
+flask db migrate
+flask db upgrade
+```
+* You can deactivate the virtual environment by:
+```bash
+deactivate
+```
+
+### After the initial setup:
+* make sure the virtual environment is activated:
+```bash
+./venv/Scripts/activate
+```
+* export the flask variable:
+```bash
+export FLASK_APP=api
+```
+* Run local server:
+```bash
+python -m flask run
+```
+
+### Single liner runner script:
+Use this single liner to run the flask server **AFTER** initial setup of the api:
+* Make sure you are cd into the main directory:
+```bash
+./venv/Scripts/activate && export FLASK_APP=api && python -m flask run
+```
 ## Connect with Creator 🤝🏻 &nbsp;
 
 <p align="center">
