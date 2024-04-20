@@ -8,12 +8,25 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # install dependencies
-RUN pip install --upgrade pip
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # copy project
 COPY . .
 
-ENTRYPOINT [ "gunicorn", "-w 4", "-b 0.0.0.0", "app:app" ]
+# initialize and migrate database (if applicable)
+RUN flask db init && flask db migrate && flask db upgrade
+
+# expose port
+EXPOSE 5000
+
+# command to run the application
+CMD [ "gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "api.app:app" ]
