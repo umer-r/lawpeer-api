@@ -12,6 +12,7 @@
 # Lib Imports
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flasgger import swag_from
 
 # Module Imports
 from api.routes.admin.controllers import create_admin, update_admin, delete_admin, get_admin_by_id, get_all_admin
@@ -25,7 +26,39 @@ admin_routes = Blueprint('admin', __name__)
 
 @admin_routes.route('/', methods=['POST'])
 @jwt_required()
+@swag_from(methods=['POST'])
 def create_new_admin():
+    """
+    Endpoint to create a new admin.
+
+    ---
+    tags:
+      - Admin
+    description: Create a new admin with the provided information.
+    security:
+      - JWT: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: Email address of the admin.
+              password:
+                type: string
+                description: Password of the admin.
+              phone_number:
+                type: string
+                description: Phone number of the admin.
+    responses:
+      200:
+        description: Successful operation. Returns the created admin.
+      409:
+        description: Conflict. Admin with the same email already exists.
+    """
     
     # Only (super) Admin can access:
     is_super_admin = check_super_admin(get_jwt_identity())
@@ -50,7 +83,25 @@ def create_new_admin():
 
 @admin_routes.route('/', methods=['GET'])
 @jwt_required()
+@swag_from(methods=['GET'])
 def all_admins():
+    """
+    Endpoint to retrieve all admins.
+
+    ---
+    tags:
+      - Admin
+    description: Retrieve a list of all admins.
+    security:
+      - JWT: []
+    responses:
+      200:
+        description: Successful operation. Returns a list of admins.
+      401:
+        description: Unauthorized access.
+      404:
+        description: No admin found.
+    """
     
     # Only (all) Admins can access
     is_admin = check_admin(get_jwt_identity())
@@ -65,7 +116,31 @@ def all_admins():
 
 @admin_routes.route('/<id>', methods=['GET'])
 @jwt_required()
+@swag_from(methods=['GET'])
 def get_admin(id):
+    """
+    Endpoint to retrieve admin details by admin ID.
+
+    ---
+    tags:
+      - Admin
+    description: Retrieve admin details by admin ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        description: ID of the admin to retrieve.
+    responses:
+      200:
+        description: Successful operation. Returns admin details.
+      401:
+        description: Unauthorized access.
+      404:
+        description: Admin not found.
+    """
     
     # Only (all) Admins can access
     is_admin = check_admin(get_jwt_identity())
@@ -80,7 +155,39 @@ def get_admin(id):
 
 @admin_routes.route('/<id>', methods=['PUT'])
 @jwt_required()
+@swag_from(methods=['PUT'])
 def update_existing_admin(id):
+    """
+    Endpoint to update an existing admin by admin ID.
+
+    ---
+    tags:
+      - Admin
+    description: Update an existing admin by admin ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        description: ID of the admin to update.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              # Add properties here as needed.
+    responses:
+      200:
+        description: Successful operation. Returns the updated admin details.
+      401:
+        description: Unauthorized access.
+      404:
+        description: Admin not found.
+    """
     
     # Admin Should be the same as the requested admin.
     is_requested_admin_or_super = check_super_and_current_admin(admin=get_jwt_identity(), id=id)
@@ -96,7 +203,31 @@ def update_existing_admin(id):
 
 @admin_routes.route('/<id>', methods=['DELETE'])
 @jwt_required()
+@swag_from(methods=['DELETE'])
 def delete_existing_admin(id):
+    """
+    Endpoint to delete an existing admin by admin ID.
+
+    ---
+    tags:
+      - Admin
+    description: Delete an existing admin by admin ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        description: ID of the admin to delete.
+    responses:
+      204:
+        description: Successful operation. No content returned.
+      401:
+        description: Unauthorized access.
+      404:
+        description: Admin not found.
+    """
     
     # Admin Should be the same as the requested admin.
     is_requested_admin_or_super = check_super_and_current_admin(admin=get_jwt_identity(), id=id)
@@ -113,7 +244,37 @@ def delete_existing_admin(id):
 
 # Admin Login Endpoint
 @admin_routes.route('/login', methods=['POST'])
+@swag_from(methods=['POST'])
 def login():
+    """
+    Endpoint for admin login.
+
+    ---
+    tags:
+      - Auth
+    description: Authenticate admin and generate access token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: Admin's email address.
+              password:
+                type: string
+                description: Admin's password.
+    responses:
+      200:
+        description: Successful operation. Returns access token.
+      401:
+        description: Invalid credentials.
+      422:
+        description: Missing mandatory key(s) in request.
+    """
+    
     data = request.get_json()
     
     # Check mandatory fields/keys

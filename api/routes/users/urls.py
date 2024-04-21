@@ -27,6 +27,7 @@
 # Lib Imports
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flasgger import swag_from
 
 # Module Imports
 from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password
@@ -41,7 +42,35 @@ user_routes = Blueprint('users', __name__)
 # -- Lawyer Specific -- #
 
 @user_routes.route('/lawyer', methods=['POST'])
+@swag_from(methods=['POST']) 
 def create_new_lawyer():
+    """
+    Endpoint to create a new lawyer.
+
+    ---
+    tags:
+      - Lawyer
+    description: Create a new lawyer with the provided information.
+    parameters:
+      - name: email
+        in: formData
+        type: string
+        required: true
+        description: Email address of the lawyer.
+      - name: username
+        in: formData
+        type: string
+        required: true
+        description: Username of the lawyer.
+      # Add other parameters here...
+
+    responses:
+      200:
+        description: Successful operation. Returns the created lawyer.
+      409:
+        description: Conflict. User with the same email or username already exists.
+    """
+    
     data = request.form
     
     is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
@@ -69,7 +98,21 @@ def create_new_lawyer():
 
 # JWT Not required - can be accessed outside authorization
 @user_routes.route('/lawyer', methods=['GET'])
+@swag_from(methods=['GET'])
 def all_lawyers():
+    """
+    Endpoint to retrieve all lawyers.
+
+    ---
+    tags:
+      - Lawyer
+    description: Retrieve a list of all lawyers.
+    responses:
+      200:
+        description: Successful operation. Returns a list of lawyers.
+      404:
+        description: No lawyer user found.
+    """
     
     lawyers = get_all_lawyers()
     if lawyers:
@@ -79,7 +122,35 @@ def all_lawyers():
 # -- Client Specific -- #
 
 @user_routes.route('/client', methods=['POST'])
+@swag_from(methods=['POST'])
 def create_new_client():
+    """
+    Endpoint to create a new client.
+
+    ---
+    tags:
+      - Client
+    description: Create a new client with the provided information.
+    parameters:
+      - name: email
+        in: formData
+        type: string
+        required: true
+        description: Email address of the client.
+      - name: username
+        in: formData
+        type: string
+        required: true
+        description: Username of the client.
+      # Add other parameters here...
+
+    responses:
+      200:
+        description: Successful operation. Returns the created client.
+      409:
+        description: Conflict. User with the same email or username already exists.
+    """
+    
     data = request.form
     
     is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
@@ -106,8 +177,26 @@ def create_new_client():
     return jsonify(returned_client), Status.HTTP_200_OK
 
 @user_routes.route('/client', methods=['GET'])
+@swag_from(methods=['GET'])
 @jwt_required()
 def all_clients():
+    """
+    Endpoint to retrieve all clients.
+
+    ---
+    tags:
+      - Client
+    description: Retrieve a list of all clients.
+    security:
+      - JWT: []
+    responses:
+      200:
+        description: Successful operation. Returns a list of clients.
+      401:
+        description: Unauthorized access.
+      404:
+        description: No client user found.
+    """
     
     is_admin = check_admin(get_jwt_identity())
     if not is_admin:
@@ -122,7 +211,32 @@ def all_clients():
 
 @user_routes.route('/<user_id>', methods=['GET'])
 @jwt_required()
+@swag_from(methods=['GET'])
 def get_user(user_id):
+    """
+    Endpoint to retrieve user details by user ID.
+
+    ---
+    tags:
+      - User
+    description: Retrieve user details by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to retrieve.
+    responses:
+      200:
+        description: Successful operation. Returns user details.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
+    
     user = get_user_by_id(user_id)
     if user:
         
@@ -136,7 +250,26 @@ def get_user(user_id):
 
 @user_routes.route('/', methods=['GET'])
 @jwt_required()
+@swag_from(methods=['GET'])
 def get_all():
+    """
+    Endpoint to retrieve all users.
+
+    ---
+    tags:
+      - User
+    description: Retrieve a list of all users.
+    security:
+      - JWT: []
+    responses:
+      200:
+        description: Successful operation. Returns a list of users.
+      401:
+        description: Unauthorized access.
+      404:
+        description: No user found.
+    """
+    
     is_admin = check_admin(get_jwt_identity())
     if not is_admin:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
@@ -149,7 +282,32 @@ def get_all():
 
 @user_routes.route('/<user_id>', methods=['PUT'])
 @jwt_required()
+@swag_from(methods=['PUT'])
 def update_existing_user(user_id):
+    """
+    Endpoint to update an existing user by user ID.
+
+    ---
+    tags:
+      - User
+    description: Update an existing user by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to update.
+    responses:
+      200:
+        description: Successful operation. Returns the updated user details.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
+    
     # Get the identity (user ID and role) from the JWT token
     is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
     if not is_user_or_admin:
@@ -166,7 +324,31 @@ def update_existing_user(user_id):
 
 @user_routes.route('/<user_id>', methods=['DELETE'])
 @jwt_required()
+@swag_from(methods=['DELETE'])
 def delete_existing_user(user_id):
+    """
+    Endpoint to delete an existing user by user ID.
+
+    ---
+    tags:
+      - User
+    description: Delete an existing user by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to delete.
+    responses:
+      204:
+        description: Successful operation. No content returned.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
     
     is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
     if not is_user_or_admin:
@@ -179,7 +361,41 @@ def delete_existing_user(user_id):
 
 @user_routes.route('/de-activate/<user_id>', methods=['POST'])
 @jwt_required()
+@swag_from(methods=['POST'])
 def deactivate_account(user_id):
+    """
+    Endpoint to deactivate an account by user ID.
+
+    ---
+    tags:
+      - User
+    description: Deactivate an account by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to deactivate.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                description: Reason for deactivation.
+    responses:
+      200:
+        description: Successful operation. User deactivated.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
     
     current_user = get_jwt_identity()
     
@@ -204,7 +420,31 @@ def deactivate_account(user_id):
     
 @user_routes.route('/activate/<user_id>', methods=['GET'])
 @jwt_required()
+@swag_from(methods=['GET'])
 def activate_account(user_id):
+    """
+    Endpoint to activate an account by user ID.
+
+    ---
+    tags:
+      - User
+    description: Activate an account by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to activate.
+    responses:
+      200:
+        description: Successful operation. User activated.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
     
     current_user = get_jwt_identity()
     
@@ -222,7 +462,44 @@ def activate_account(user_id):
 
 @user_routes.route('/suspend/<user_id>', methods=['POST'])
 @jwt_required()
+@swag_from(methods=['POST'])
 def suspend_account(user_id):
+    """
+    Endpoint to suspend an account by user ID.
+
+    ---
+    tags:
+      - User
+    description: Suspend an account by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to suspend.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Status of the suspension.
+              reason:
+                type: string
+                description: Reason for suspension.
+    responses:
+      200:
+        description: Successful operation. User suspended.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
     
     current_user = get_jwt_identity()
     
@@ -249,7 +526,44 @@ def suspend_account(user_id):
 
 @user_routes.route('/un-suspend/<user_id>', methods=['POST'])
 @jwt_required()
+@swag_from(methods=['POST'])
 def unsuspend_account(user_id):
+    """
+    Endpoint to unsuspend an account by user ID.
+
+    ---
+    tags:
+      - User
+    description: Unsuspend an account by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to unsuspend.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Status of the unsuspension.
+              reason:
+                type: string
+                description: Reason for unsuspension.
+    responses:
+      200:
+        description: Successful operation. User unsuspended.
+      401:
+        description: Unauthorized access.
+      404:
+        description: User not found.
+    """
     
     current_user = get_jwt_identity()
     
@@ -276,7 +590,46 @@ def unsuspend_account(user_id):
 
 @user_routes.route('/change-password/<user_id>', methods=['POST'])
 @jwt_required()
+@swag_from(methods=['POST'])
 def change_user_password(user_id):
+    """
+    Endpoint to change a user's password by user ID.
+
+    ---
+    tags:
+      - User
+    description: Change a user's password by user ID.
+    security:
+      - JWT: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID of the user to change password for.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              prev_pass:
+                type: string
+                description: Previous password.
+              new_pass:
+                type: string
+                description: New password.
+    responses:
+      200:
+        description: Successful operation. Password changed.
+      401:
+        description: Unauthorized access.
+      400:
+        description: New password and previous password do not match.
+      404:
+        description: User not found.
+    """
     
     current_user = get_jwt_identity()
     data = request.get_json()
@@ -308,7 +661,37 @@ def change_user_password(user_id):
 
 # User Login Endpoint
 @user_routes.route('/login', methods=['POST'])
+@swag_from(methods=['POST'])
 def login():
+    """
+    Endpoint for user login.
+
+    ---
+    tags:
+      - Auth
+    description: Authenticate user and generate access token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: User's email address.
+              password:
+                type: string
+                description: User's password.
+    responses:
+      200:
+        description: Successful operation. Returns access token.
+      401:
+        description: Invalid credentials.
+      422:
+        description: Missing mandatory key(s) in request.
+    """
+    
     data = request.get_json()
     
     is_missing, missing_keys = check_mandatory(['email', 'password'], data)

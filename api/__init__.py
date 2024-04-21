@@ -3,19 +3,22 @@
         Initializer module for creating and configuring the Flask application.
 
     Module Imports:
-        - user_routes: Blueprint for user-related routes
-        - admin_routes: Blueprint for admin-related routes
-        - create_super_admin: Function for creating a super admin during application initialization
-        - db: Database instance for SQLAlchemy
-        - Config: Class for loading configuration settings
+        - user_routes: Blueprint for user-related routes.
+        - admin_routes: Blueprint for admin-related routes.
+        - create_super_admin: Function for creating a super admin during application initialization.
+        - db: Database instance for SQLAlchemy.
+        - Config: Class for loading configuration settings.
 
     Library Imports:
-        - Flask: Web framework for building the application
-        - Migrate: Extension for handling database migrations
-        - CORS: Cross-Origin Resource Sharing middleware for handling CORS
-        - load_dotenv: Function for loading environment variables from a .env file
-        - JWTManager: Extension for handling JWT authentication
-        - os: Operating system module for interacting with the operating system
+        - Flask: Web framework for building the application.
+        - Migrate: Extension for handling database migrations.
+        - CORS: Cross-Origin Resource Sharing middleware for handling CORS.
+        - load_dotenv: Function for loading environment variables from a .env file.
+        - JWTManager: Extension for handling JWT authentication.
+        - os: Operating system module for interacting with the operating system.
+        - socketio: Socket.IO library for real-time communication.
+        - flasgger: Api documentation library provided by swagger.
+
 
     Functions:
         - create_app(): 
@@ -28,11 +31,14 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
+from flask_socketio import SocketIO
+from flasgger import Swagger
 import os
 
 # Import Routes:
 from api.routes.users.urls import user_routes
 from api.routes.admin.urls import admin_routes
+# from api.routes.chats.urls import chat_routes
 
 # Initialize admin:
 from api.routes.admin.controllers import create_super_admin
@@ -67,6 +73,12 @@ def create_app():
     cors_origin = os.environ.get('ALLOWED_ORIGIN')
     CORS(app)
 
+    # Initialize SocketIO
+    socketio = SocketIO(app)
+    
+    # Initialize Swagger
+    swagger = Swagger(app)
+
     # Db init:
     migrate = Migrate()
     db.init_app(app)
@@ -79,11 +91,16 @@ def create_app():
     # Register routes
     app.register_blueprint(user_routes, url_prefix='/api/users')
     app.register_blueprint(admin_routes, url_prefix='/api/admin')
+    # app.register_blueprint(chat_routes, url_prefix='/api/chat')  # Register chat routes
+
+    
+    # Define SocketIO event handlers in your code (see separate file)
+    # ... (Import and define your chat-related event handlers here)
     
     print(app.url_map)
     
     return app
 
 if __name__ == '__main__':
-    app = create_app()
+    app = create_app()  # Return socketio alongside the app
     app.run()
