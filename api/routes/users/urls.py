@@ -178,7 +178,6 @@ def create_new_client():
 
 @user_routes.route('/client', methods=['GET'])
 @swag_from(methods=['GET'])
-@jwt_required()
 def all_clients():
     """
     Endpoint to retrieve all clients.
@@ -187,8 +186,6 @@ def all_clients():
     tags:
       - Client
     description: Retrieve a list of all clients.
-    security:
-      - JWT: []
     responses:
       200:
         description: Successful operation. Returns a list of clients.
@@ -210,7 +207,6 @@ def all_clients():
 # -- General User Routes -- #
 
 @user_routes.route('/<user_id>', methods=['GET'])
-@jwt_required()
 @swag_from(methods=['GET'])
 def get_user(user_id):
     """
@@ -220,8 +216,6 @@ def get_user(user_id):
     tags:
       - User
     description: Retrieve user details by user ID.
-    security:
-      - JWT: []
     parameters:
       - name: user_id
         in: path
