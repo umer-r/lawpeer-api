@@ -1,14 +1,18 @@
 """
     TODO:   1 - CASCADE upon deletion from users.               - [DONE] -> VIA Controller.
             2 - Remove status or reason field from users.       - [HALT]
+            3 - Move toDict to utils.helper                     - [DONE]
 """
 
-from api.database import db
-
+# Lib Imports
 from datetime import datetime
 from sqlalchemy import inspect
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
+
+# Module Imports:
+from api.database import db
+from api.utils.helper import to_dict
 
 # ----------------------------------------------- #
 
@@ -57,8 +61,8 @@ class User(db.Model):
     }
 
     # How to serialize SqlAlchemy PostgreSQL Query to JSON => https://stackoverflow.com/a/46180522
-    def toDict(self):
-        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+    def to_dict(self):
+        return to_dict(self)
 
     def __repr__(self):
         return f"<User {self.email}>"

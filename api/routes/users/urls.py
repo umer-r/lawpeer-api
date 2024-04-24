@@ -117,7 +117,7 @@ def all_lawyers():
     
     lawyers = get_all_lawyers()
     if lawyers:
-        return jsonify([lawyer.toDict() for lawyer in lawyers]), Status.HTTP_200_OK
+        return jsonify([lawyer.to_dict() for lawyer in lawyers]), Status.HTTP_200_OK
     return jsonify({'message': 'No lawyer user found'}), Status.HTTP_404_NOT_FOUND
 
 # -- Client Specific -- #
@@ -199,7 +199,7 @@ def all_clients():
     
     clients = get_all_clients()
     if clients:
-        return jsonify([client.toDict() for client in clients]), Status.HTTP_200_OK
+        return jsonify([client.to_dict() for client in clients]), Status.HTTP_200_OK
     return jsonify({'message': 'No client user found'}), Status.HTTP_404_NOT_FOUND
 
 # -- General User Routes -- #
@@ -265,7 +265,7 @@ def get_all():
     
     users = get_all_users()
     if users:
-        return jsonify([user.toDict() for user in users]), Status.HTTP_200_OK
+        return jsonify([user.to_dict() for user in users]), Status.HTTP_200_OK
     
     return jsonify({'message': 'No user found'}), Status.HTTP_404_NOT_FOUND
 
@@ -307,7 +307,7 @@ def update_existing_user(user_id):
     
     updated_user = update_user(user_id, profile_image=profile_image, **data)
     if updated_user:
-        return jsonify(updated_user.toDict()), Status.HTTP_200_OK
+        return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 

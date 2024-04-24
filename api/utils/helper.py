@@ -6,6 +6,7 @@
 from flask import current_app
 from datetime import datetime
 import os
+from sqlalchemy import inspect
 
 # ----------------------------------------------- #
 
@@ -55,3 +56,15 @@ def rename_profile_image(profile_image):
     current_time = datetime.now().strftime("%Y%m%d%H%M%S")
     new_filename = f"{current_time}{extension}"
     return new_filename
+
+def to_dict(instance):
+    """
+        Convert SQLAlchemy model instance to a dictionary representation.
+
+        Args:
+            instance: SQLAlchemy model instance to be converted.
+
+        Returns:
+            dict: Dictionary representation of the SQLAlchemy model instance.
+    """
+    return {c.key: getattr(instance, c.key) for c in inspect(instance).mapper.column_attrs}
