@@ -114,7 +114,7 @@ def all_admins():
     
     return jsonify({'message': 'No admin found'}), Status.HTTP_404_NOT_FOUND
 
-@admin_routes.route('/<id>', methods=['GET'])
+@admin_routes.route('/<int:id>', methods=['GET'])
 @jwt_required()
 @swag_from(methods=['GET'])
 def get_admin(id):
@@ -153,7 +153,7 @@ def get_admin(id):
     
     return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 
-@admin_routes.route('/<id>', methods=['PUT'])
+@admin_routes.route('/<int:id>', methods=['PUT'])
 @jwt_required()
 @swag_from(methods=['PUT'])
 def update_existing_admin(id):
@@ -201,7 +201,7 @@ def update_existing_admin(id):
     
     return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 
-@admin_routes.route('/<id>', methods=['DELETE'])
+@admin_routes.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 @swag_from(methods=['DELETE'])
 def delete_existing_admin(id):

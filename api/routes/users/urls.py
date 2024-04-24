@@ -73,7 +73,7 @@ def create_new_lawyer():
     
     data = request.form
     
-    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
+    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'], data)
     if is_missing:
         return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
@@ -85,11 +85,12 @@ def create_new_lawyer():
     dob = data.get('dob')
     country = data.get('country')
     phone_number = data.get('phone_number')
+    address = data.get('address')
     bar_association_id = data.get('bar_association_id')
     experience_years = data.get('experience_years')
     profile_image = request.files.get('profile_pic')
 
-    new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, profile_image, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
+    new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, profile_image, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
     if new_lawyer is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
@@ -153,7 +154,7 @@ def create_new_client():
     
     data = request.form
     
-    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name'], data)
+    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'], data)
     if is_missing:
         return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
@@ -165,10 +166,11 @@ def create_new_client():
     dob = data.get('dob')
     country = data.get('country')
     phone_number = data.get('phone_number')
+    address = data.get('address')
     case_details = data.get('case_details')
     profile_image = request.files.get('profile_pic')
 
-    new_client = create_user(email, username, password, first_name, last_name, dob, country, phone_number, profile_image, role='client', case_details=case_details)
+    new_client = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, profile_image, role='client', case_details=case_details)
     if new_client is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
@@ -195,10 +197,6 @@ def all_clients():
         description: No client user found.
     """
     
-    is_admin = check_admin(get_jwt_identity())
-    if not is_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
     clients = get_all_clients()
     if clients:
         return jsonify([client.toDict() for client in clients]), Status.HTTP_200_OK
@@ -206,7 +204,7 @@ def all_clients():
 
 # -- General User Routes -- #
 
-@user_routes.route('/<user_id>', methods=['GET'])
+@user_routes.route('/<int:user_id>', methods=['GET'])
 @swag_from(methods=['GET'])
 def get_user(user_id):
     """
@@ -232,14 +230,11 @@ def get_user(user_id):
     """
     
     user = get_user_by_id(user_id)
+    
     if user:
-        
-        is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
-        if not is_user_or_admin:
-            returned_user = omit_sensitive_fields(user)
-            return jsonify(returned_user), Status.HTTP_200_OK
-        
-        return jsonify(user.toDict()), Status.HTTP_200_OK
+      returned_user = omit_sensitive_fields(user)
+      return jsonify(returned_user), Status.HTTP_200_OK
+    
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/', methods=['GET'])
@@ -274,7 +269,7 @@ def get_all():
     
     return jsonify({'message': 'No user found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/<user_id>', methods=['PUT'])
+@user_routes.route('/<int:user_id>', methods=['PUT'])
 @jwt_required()
 @swag_from(methods=['PUT'])
 def update_existing_user(user_id):
@@ -316,7 +311,7 @@ def update_existing_user(user_id):
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/<user_id>', methods=['DELETE'])
+@user_routes.route('/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 @swag_from(methods=['DELETE'])
 def delete_existing_user(user_id):
@@ -353,7 +348,7 @@ def delete_existing_user(user_id):
         return jsonify({'message': f'User with id {user_id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/de-activate/<user_id>', methods=['POST'])
+@user_routes.route('/de-activate/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 def deactivate_account(user_id):
@@ -412,7 +407,7 @@ def deactivate_account(user_id):
         return jsonify({'message': f'User with id {user_id} deactivated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
     
-@user_routes.route('/activate/<user_id>', methods=['GET'])
+@user_routes.route('/activate/<int:user_id>', methods=['GET'])
 @jwt_required()
 @swag_from(methods=['GET'])
 def activate_account(user_id):
@@ -454,7 +449,7 @@ def activate_account(user_id):
         return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/suspend/<user_id>', methods=['POST'])
+@user_routes.route('/suspend/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 def suspend_account(user_id):
@@ -518,7 +513,7 @@ def suspend_account(user_id):
         return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/un-suspend/<user_id>', methods=['POST'])
+@user_routes.route('/un-suspend/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 def unsuspend_account(user_id):
@@ -582,7 +577,7 @@ def unsuspend_account(user_id):
         return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/change-password/<user_id>', methods=['POST'])
+@user_routes.route('/change-password/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 def change_user_password(user_id):
@@ -629,7 +624,7 @@ def change_user_password(user_id):
     data = request.get_json()
     
     # Mandatory fields check:
-    is_missing, missing_keys = check_mandatory(['prev_pass', 'new_pass'], data)
+    is_missing, missing_keys = check_mandatory(['old_password', 'new_password'], data)
     if is_missing:
         return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
@@ -638,8 +633,8 @@ def change_user_password(user_id):
     if not is_user_or_admin:
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
-    prev_pass = data.get('prev_pass')
-    new_pass = data.get('new_pass')
+    prev_pass = data.get('old_password')
+    new_pass = data.get('new_password')
     
     changed_user_password = change_password(user_id=user_id, prev_password=prev_pass, new_password=new_pass)
     
