@@ -38,7 +38,7 @@ import os
 # Import Routes:
 from api.routes.users.urls import user_routes
 from api.routes.admin.urls import admin_routes
-# from api.routes.chats.urls import chat_routes
+from api.routes.chats.urls import chat_routes
 
 # Initialize admin:
 from api.routes.admin.controllers import create_super_admin
@@ -46,6 +46,7 @@ from api.routes.admin.controllers import create_super_admin
 # Import Modules:
 from api.database import db
 from api.config.config import Config
+from api.socketio import init_app as init_socketio
 
 # ----------------------------------------------- #
 
@@ -74,7 +75,7 @@ def create_app():
     CORS(app)
 
     # Initialize SocketIO
-    socketio = SocketIO(app)
+    init_socketio(app)
     
     # Initialize Swagger
     swagger = Swagger(app)
@@ -91,7 +92,7 @@ def create_app():
     # Register routes
     app.register_blueprint(user_routes, url_prefix='/api/users')
     app.register_blueprint(admin_routes, url_prefix='/api/admin')
-    # app.register_blueprint(chat_routes, url_prefix='/api/chat')  # Register chat routes
+    app.register_blueprint(chat_routes, url_prefix='/api/chat')  # Register chat routes
 
     
     # Define SocketIO event handlers in your code (see separate file)
