@@ -14,12 +14,15 @@
             13 - Add user password change route.                                         - [DONE]
             14 - Change update existing user controller to handle all user updation.     - [DONE]
             15 - FIX: Cascade in lawyers & clients table upon user deletion              - [DONE] -> VIA Controller
-            16 - Substitute prefixes in routes with (-) e.g. de-activate                 - []
+            16 - Substitute prefixes in routes with (-) e.g. de-activate                 - [DONE]
             17 - Add Comments.                                                           - []
+            18 - Remove JWT from get_user, get_lawyer and get_client                     - [DONE]
+            19 - Make auth_controller or access_checker decorator as well                -
     
     TODO:
         Refactor:
             1 - Make code more reusable.
+                  - Moved check_mandatory() to decorators, previous version depreciated.
             2 - Separate unconcering logic.
             3 - Remove redundant bits.
 """
@@ -33,7 +36,8 @@ from flasgger import swag_from
 from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password
 from api.routes.users.auth_controllers import generate_access_token, check_admin, check_user_or_admin
 from api.utils.status_codes import Status
-from api.utils.helper import check_mandatory, omit_sensitive_fields
+from api.utils.helper import omit_sensitive_fields
+from api.utils.decorators import check_mandatory
 
 # ----------------------------------------------- #
 
@@ -43,6 +47,7 @@ user_routes = Blueprint('users', __name__)
 
 @user_routes.route('/lawyer', methods=['POST'])
 @swag_from(methods=['POST']) 
+@check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'])
 def create_new_lawyer():
     """
     Endpoint to create a new lawyer.
@@ -72,10 +77,6 @@ def create_new_lawyer():
     """
     
     data = request.form
-    
-    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     username = data.get('username')
@@ -124,6 +125,7 @@ def all_lawyers():
 
 @user_routes.route('/client', methods=['POST'])
 @swag_from(methods=['POST'])
+@check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'])
 def create_new_client():
     """
     Endpoint to create a new client.
@@ -153,10 +155,6 @@ def create_new_client():
     """
     
     data = request.form
-    
-    is_missing, missing_keys = check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     username = data.get('username')
@@ -351,6 +349,7 @@ def delete_existing_user(user_id):
 @user_routes.route('/de-activate/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
+@check_mandatory(['reason'])
 def deactivate_account(user_id):
     """
     Endpoint to deactivate an account by user ID.
@@ -389,11 +388,6 @@ def deactivate_account(user_id):
     current_user = get_jwt_identity()
     
     data = request.get_json()
-
-    is_missing, missing_keys = check_mandatory(['reason'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
-    
     reason = data.get('reason')
     
     # Admin can also de-activate user account.
@@ -452,6 +446,7 @@ def activate_account(user_id):
 @user_routes.route('/suspend/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
+@check_mandatory(['status'])
 def suspend_account(user_id):
     """
     Endpoint to suspend an account by user ID.
@@ -498,10 +493,6 @@ def suspend_account(user_id):
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     data = request.get_json()
-
-    is_missing, missing_keys = check_mandatory(['status'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     status = data.get('status')
     reason = data.get('reason')
@@ -516,6 +507,7 @@ def suspend_account(user_id):
 @user_routes.route('/un-suspend/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
+@check_mandatory(['status'])
 def unsuspend_account(user_id):
     """
     Endpoint to unsuspend an account by user ID.
@@ -562,10 +554,6 @@ def unsuspend_account(user_id):
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     data = request.get_json()
-
-    is_missing, missing_keys = check_mandatory(['status'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     status = data.get('status')
     reason = data.get('reason')
@@ -580,6 +568,7 @@ def unsuspend_account(user_id):
 @user_routes.route('/change-password/<int:user_id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
+@check_mandatory(['old_password', 'new_password'])
 def change_user_password(user_id):
     """
     Endpoint to change a user's password by user ID.
@@ -623,11 +612,6 @@ def change_user_password(user_id):
     current_user = get_jwt_identity()
     data = request.get_json()
     
-    # Mandatory fields check:
-    is_missing, missing_keys = check_mandatory(['old_password', 'new_password'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
-    
     # Access control check:
     is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
     if not is_user_or_admin:
@@ -651,6 +635,7 @@ def change_user_password(user_id):
 # User Login Endpoint
 @user_routes.route('/login', methods=['POST'])
 @swag_from(methods=['POST'])
+@check_mandatory(['email', 'password'])
 def login():
     """
     Endpoint for user login.
@@ -682,11 +667,7 @@ def login():
     """
     
     data = request.get_json()
-    
-    is_missing, missing_keys = check_mandatory(['email', 'password'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
-    
+        
     email = data.get('email')
     password = data.get('password')
 

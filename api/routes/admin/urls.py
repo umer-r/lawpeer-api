@@ -18,7 +18,7 @@ from flasgger import swag_from
 from api.routes.admin.controllers import create_admin, update_admin, delete_admin, get_admin_by_id, get_all_admin
 from api.routes.admin.auth_controllers import generate_access_token, check_admin, check_current_admin, check_super_and_current_admin, check_super_admin
 from api.utils.status_codes import Status
-from api.utils.helper import check_mandatory
+from api.utils.decorators import check_mandatory
 
 # ----------------------------------------------- #
 
@@ -27,6 +27,7 @@ admin_routes = Blueprint('admin', __name__)
 @admin_routes.route('/', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
+@check_mandatory(['email', 'password'])
 def create_new_admin():
     """
     Endpoint to create a new admin.
@@ -66,11 +67,6 @@ def create_new_admin():
         return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     data = request.get_json()
-    
-    is_missing, missing_keys = check_mandatory(['email', 'password'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
-    
     email = data.get('email')
     password = data.get('password')
     phone_number = data.get('phone_number')
@@ -245,6 +241,7 @@ def delete_existing_admin(id):
 # Admin Login Endpoint
 @admin_routes.route('/login', methods=['POST'])
 @swag_from(methods=['POST'])
+@check_mandatory(['email', 'password'])
 def login():
     """
     Endpoint for admin login.
@@ -276,11 +273,6 @@ def login():
     """
     
     data = request.get_json()
-    
-    # Check mandatory fields/keys
-    is_missing, missing_keys = check_mandatory(['email', 'password'], data)
-    if is_missing:
-        return jsonify(error=f'Missing mandatory key(s): {", ".join(missing_keys)}'), Status.HTTP_422_UNPROCESSABLE_ENTITY
     
     email = data.get('email')
     password = data.get('password')
