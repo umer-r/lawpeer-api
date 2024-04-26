@@ -18,6 +18,9 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def check_mandatory(keys, data):
+    """
+        OBSELETE: Moved to decorator
+    """
     missing_keys = [key for key in keys if key not in data]
     if missing_keys:
         return True, missing_keys
