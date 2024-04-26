@@ -38,7 +38,7 @@ def omit_sensitive_fields(user):
             dict: A dictionary containing the user data with sensitive fields omitted.
     """
     
-    sensitive_fields = ['password', 'dob', 'phone_number', 'reason', 'status']  # Add any additional sensitive fields here
+    sensitive_fields = ['password']  # Add any additional sensitive fields here
     return {key: value for key, value in user.toDict().items() if key not in sensitive_fields}
 
 def rename_profile_image(profile_image):
