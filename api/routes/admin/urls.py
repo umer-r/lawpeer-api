@@ -75,7 +75,7 @@ def create_new_admin():
     if new_admin is None:
         return jsonify({'message': 'Admin with the same email already exists'}), Status.HTTP_409_CONFLICT
     
-    return jsonify(new_admin.toDict()), Status.HTTP_200_OK
+    return jsonify(new_admin.to_dict()), Status.HTTP_200_OK
 
 @admin_routes.route('/', methods=['GET'])
 @jwt_required()
@@ -106,7 +106,7 @@ def all_admins():
     
     admins = get_all_admin()
     if admins:
-        return jsonify([admin.toDict() for admin in admins]), Status.HTTP_200_OK
+        return jsonify([admin.to_dict() for admin in admins]), Status.HTTP_200_OK
     
     return jsonify({'message': 'No admin found'}), Status.HTTP_404_NOT_FOUND
 
@@ -145,7 +145,7 @@ def get_admin(id):
     
     admin = get_admin_by_id(id)
     if admin:
-        return jsonify(admin.toDict()), Status.HTTP_200_OK
+        return jsonify(admin.to_dict()), Status.HTTP_200_OK
     
     return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 
@@ -193,7 +193,7 @@ def update_existing_admin(id):
     data = request.get_json()
     updated_admin = update_admin(id, **data)
     if updated_admin:
-        return jsonify(updated_admin.toDict()), Status.HTTP_200_OK
+        return jsonify(updated_admin.to_dict()), Status.HTTP_200_OK
     
     return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 

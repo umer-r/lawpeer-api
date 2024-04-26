@@ -1,7 +1,10 @@
-from api.database import db
-
+# Lib Imports:
 from datetime import datetime
 from sqlalchemy import inspect
+
+# Module Imports:
+from api.database import db
+from api.utils.helper import to_dict
 
 # ----------------------------------------------- #
 
@@ -22,8 +25,8 @@ class Admin(db.Model):
     role = db.Column(db.String(50))  # Role is 'Admin'
 
     # How to serialize SqlAlchemy PostgreSQL Query to JSON => https://stackoverflow.com/a/46180522
-    def toDict(self):
-        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+    def to_dict(self):
+        return to_dict(self)
 
     def __repr__(self):
         return f"<Admin {self.email}>"
