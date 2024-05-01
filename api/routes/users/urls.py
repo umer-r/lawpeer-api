@@ -29,15 +29,16 @@
 
 # Lib Imports
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from flasgger import swag_from
 
 # Module Imports
 from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password
-from api.routes.users.auth_controllers import generate_access_token, check_admin, check_user_or_admin
+from api.decorators.mandatory_keys import check_mandatory
+from api.decorators.access_control_decorators import admin_required, user_or_admin_required
 from api.utils.status_codes import Status
-from api.utils.helper import omit_sensitive_fields
-from api.utils.decorators import check_mandatory
+from api.utils.helper import omit_user_sensitive_fields
+from api.utils.token_generator import generate_user_access_token
 
 # ----------------------------------------------- #
 
@@ -95,7 +96,7 @@ def create_new_lawyer():
     if new_lawyer is None:
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
-    returned_lawyer = omit_sensitive_fields(new_lawyer)
+    returned_lawyer = omit_user_sensitive_fields(new_lawyer)
     return jsonify(returned_lawyer), Status.HTTP_200_OK
 
 # JWT Not required - can be accessed outside authorization
@@ -173,7 +174,7 @@ def create_new_client():
         return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
     # Remove sensitive fields
-    returned_client = omit_sensitive_fields(new_client)
+    returned_client = omit_user_sensitive_fields(new_client)
     return jsonify(returned_client), Status.HTTP_200_OK
 
 @user_routes.route('/client', methods=['GET'])
@@ -202,9 +203,9 @@ def all_clients():
 
 # -- General User Routes -- #
 
-@user_routes.route('/<int:user_id>', methods=['GET'])
+@user_routes.route('/<int:id>', methods=['GET'])
 @swag_from(methods=['GET'])
-def get_user(user_id):
+def get_user(id):
     """
     Endpoint to retrieve user details by user ID.
 
@@ -213,7 +214,7 @@ def get_user(user_id):
       - User
     description: Retrieve user details by user ID.
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -227,10 +228,10 @@ def get_user(user_id):
         description: User not found.
     """
     
-    user = get_user_by_id(user_id)
+    user = get_user_by_id(id)
     
     if user:
-      returned_user = omit_sensitive_fields(user)
+      returned_user = omit_user_sensitive_fields(user)
       return jsonify(returned_user), Status.HTTP_200_OK
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
@@ -238,6 +239,7 @@ def get_user(user_id):
 @user_routes.route('/', methods=['GET'])
 @jwt_required()
 @swag_from(methods=['GET'])
+@admin_required
 def get_all():
     """
     Endpoint to retrieve all users.
@@ -257,20 +259,17 @@ def get_all():
         description: No user found.
     """
     
-    is_admin = check_admin(get_jwt_identity())
-    if not is_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
     users = get_all_users()
     if users:
         return jsonify([user.to_dict() for user in users]), Status.HTTP_200_OK
     
     return jsonify({'message': 'No user found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/<int:user_id>', methods=['PUT'])
+@user_routes.route('/<int:id>', methods=['PUT'])
 @jwt_required()
 @swag_from(methods=['PUT'])
-def update_existing_user(user_id):
+@user_or_admin_required
+def update_existing_user(id):
     """
     Endpoint to update an existing user by user ID.
 
@@ -281,7 +280,7 @@ def update_existing_user(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -294,25 +293,21 @@ def update_existing_user(user_id):
       404:
         description: User not found.
     """
-    
-    # Get the identity (user ID and role) from the JWT token
-    is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
-    if not is_user_or_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
+
     data = request.form
     profile_image = request.files.get('profile_image')
     
-    updated_user = update_user(user_id, profile_image=profile_image, **data)
+    updated_user = update_user(id, profile_image=profile_image, **data)
     if updated_user:
         return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/<int:user_id>', methods=['DELETE'])
+@user_routes.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 @swag_from(methods=['DELETE'])
-def delete_existing_user(user_id):
+@admin_required
+def delete_existing_user(id):
     """
     Endpoint to delete an existing user by user ID.
 
@@ -323,7 +318,7 @@ def delete_existing_user(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -336,21 +331,18 @@ def delete_existing_user(user_id):
       404:
         description: User not found.
     """
-    
-    is_user_or_admin = check_user_or_admin(user=get_jwt_identity(), id=user_id)
-    if not is_user_or_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
-    deleted_user = delete_user(user_id)
+        
+    deleted_user = delete_user(id)
     if deleted_user:
-        return jsonify({'message': f'User with id {user_id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
+        return jsonify({'message': f'User with id {id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/de-activate/<int:user_id>', methods=['POST'])
+@user_routes.route('/de-activate/<int:id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
+@user_or_admin_required
 @check_mandatory(['reason'])
-def deactivate_account(user_id):
+def deactivate_account(id):
     """
     Endpoint to deactivate an account by user ID.
 
@@ -361,7 +353,7 @@ def deactivate_account(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -384,27 +376,21 @@ def deactivate_account(user_id):
       404:
         description: User not found.
     """
-    
-    current_user = get_jwt_identity()
-    
+        
     data = request.get_json()
     reason = data.get('reason')
     
-    # Admin can also de-activate user account.
-    is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
-    if not is_user_or_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED  
-    
-    deactivated_user = self_deactivate_user_account(user_id=user_id, reason=reason)
+    deactivated_user = self_deactivate_user_account(user_id=id, reason=reason)
     
     if deactivated_user is not None:
-        return jsonify({'message': f'User with id {user_id} deactivated successfully!'}), Status.HTTP_200_OK
+        return jsonify({'message': f'User with id {id} deactivated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
     
-@user_routes.route('/activate/<int:user_id>', methods=['GET'])
+@user_routes.route('/activate/<int:id>', methods=['GET'])
 @jwt_required()
 @swag_from(methods=['GET'])
-def activate_account(user_id):
+@user_or_admin_required
+def activate_account(id):
     """
     Endpoint to activate an account by user ID.
 
@@ -415,7 +401,7 @@ def activate_account(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -427,27 +413,21 @@ def activate_account(user_id):
         description: Unauthorized access.
       404:
         description: User not found.
-    """
-    
-    current_user = get_jwt_identity()
-    
-    # Admin can also activate user account.
-    is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
-    if not is_user_or_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
-    activated_user = self_activate_user_account(user_id=user_id)
+    """    
+      
+    activated_user = self_activate_user_account(user_id=id)
     
     # Test the following logic:
     if activated_user is not None:
-        return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+        return jsonify({'message': f'User with id {id} activated successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/suspend/<int:user_id>', methods=['POST'])
+@user_routes.route('/suspend/<int:id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 @check_mandatory(['status'])
-def suspend_account(user_id):
+@admin_required
+def suspend_account(id):
     """
     Endpoint to suspend an account by user ID.
 
@@ -458,7 +438,7 @@ def suspend_account(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -484,31 +464,25 @@ def suspend_account(user_id):
       404:
         description: User not found.
     """
-    
-    current_user = get_jwt_identity()
-    
-    # Admin can also activate user account.
-    is_admin = check_admin(user=current_user)
-    if not is_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
+       
     data = request.get_json()
     
     status = data.get('status')
     reason = data.get('reason')
     
-    suspended_user = update_existing_user(user_id=user_id, is_suspended=True, status=status, reason=reason)
+    suspended_user = update_user(user_id=id, is_suspended=True, status=status, reason=reason)
     
     # User exists check:
     if suspended_user is not None:
-        return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+        return jsonify({'message': f'User with id {id} Suspended successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/un-suspend/<int:user_id>', methods=['POST'])
+@user_routes.route('/un-suspend/<int:id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 @check_mandatory(['status'])
-def unsuspend_account(user_id):
+@admin_required
+def unsuspend_account(id):
     """
     Endpoint to unsuspend an account by user ID.
 
@@ -519,7 +493,7 @@ def unsuspend_account(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -545,31 +519,25 @@ def unsuspend_account(user_id):
       404:
         description: User not found.
     """
-    
-    current_user = get_jwt_identity()
-    
-    # Admin can also activate user account.
-    is_admin = check_admin(user=current_user)
-    if not is_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
-    
+
     data = request.get_json()
     
     status = data.get('status')
     reason = data.get('reason')
     
-    unsuspended_user = update_existing_user(user_id=user_id, is_suspended=False, status=status, reason=reason)
+    unsuspended_user = update_user(user_id=id, is_suspended=False, status=status, reason=reason)
     
     # User exists check:
     if unsuspended_user is not None:
-        return jsonify({'message': f'User with id {user_id} activated successfully!'}), Status.HTTP_200_OK
+        return jsonify({'message': f'User with id {id} un-suspended successfully!'}), Status.HTTP_200_OK
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
-@user_routes.route('/change-password/<int:user_id>', methods=['POST'])
+@user_routes.route('/change-password/<int:id>', methods=['POST'])
 @jwt_required()
 @swag_from(methods=['POST'])
 @check_mandatory(['old_password', 'new_password'])
-def change_user_password(user_id):
+@user_or_admin_required
+def change_user_password(id):
     """
     Endpoint to change a user's password by user ID.
 
@@ -580,7 +548,7 @@ def change_user_password(user_id):
     security:
       - JWT: []
     parameters:
-      - name: user_id
+      - name: id
         in: path
         type: string
         required: true
@@ -609,24 +577,18 @@ def change_user_password(user_id):
         description: User not found.
     """
     
-    current_user = get_jwt_identity()
     data = request.get_json()
-    
-    # Access control check:
-    is_user_or_admin = check_user_or_admin(user=current_user, id=user_id)
-    if not is_user_or_admin:
-        return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
     
     prev_pass = data.get('old_password')
     new_pass = data.get('new_password')
     
-    changed_user_password = change_password(user_id=user_id, prev_password=prev_pass, new_password=new_pass)
+    changed_user_password = change_password(user_id=id, prev_password=prev_pass, new_password=new_pass)
     
     if not changed_user_password:
         return jsonify({'message': 'New password and previous password do not match!'}), Status.HTTP_400_BAD_REQUEST
     
     if changed_user_password is not None:
-        return jsonify({'message': f'Password change operation for User with id {user_id} successful!'}), Status.HTTP_200_OK
+        return jsonify({'message': f'Password change operation for User with id {id} successful!'}), Status.HTTP_200_OK
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
@@ -671,7 +633,7 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    is_authorized, token = generate_access_token(email=email, password=password)
+    is_authorized, token = generate_user_access_token(email=email, password=password)
     if is_authorized:
         return jsonify(access_token=token), Status.HTTP_200_OK
     
