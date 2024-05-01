@@ -30,7 +30,7 @@ def get_upload_folder():
     with current_app.app_context():
         return os.path.join(current_app.root_path, 'assets/uploaded')
     
-def omit_sensitive_fields(user):
+def omit_user_sensitive_fields(user):
     """
         Omit sensitive fields from the user object.
 
@@ -42,7 +42,7 @@ def omit_sensitive_fields(user):
     """
     
     sensitive_fields = ['password']  # Add any additional sensitive fields here
-    return {key: value for key, value in user.toDict().items() if key not in sensitive_fields}
+    return {key: value for key, value in user.to_dict().items() if key not in sensitive_fields}
 
 def rename_profile_image(profile_image):
     """
