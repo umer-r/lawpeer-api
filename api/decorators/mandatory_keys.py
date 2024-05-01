@@ -21,6 +21,7 @@ def check_mandatory(keys):
     Returns:
         function: A decorator function.
     """
+    
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
