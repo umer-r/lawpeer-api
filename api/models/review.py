@@ -1,5 +1,6 @@
 # Lib Imports
 from datetime import datetime
+from sqlalchemy import ForeignKeyConstraint
 
 # Module Imports:
 from api.database import db
@@ -21,11 +22,13 @@ class Review(db.Model):
     review_text = db.Column(db.Text)
 
     # Relationships
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
-    client = db.relationship('Client', backref='reviews_association')
+    client_id = db.Column(db.Integer, nullable=False)
+    lawyer_id = db.Column(db.Integer, nullable=False)
     
-    lawyer_id = db.Column(db.Integer, db.ForeignKey('lawyers.id'), nullable=False)
-    lawyer = db.relationship('Lawyer', backref='reviews_association')
+    __table_args__ = (
+        ForeignKeyConstraint(['client_id'], ['clients.id']),
+        ForeignKeyConstraint(['lawyer_id'], ['lawyers.id']),
+    )
     
     def to_dict(self):
         return to_dict(self)

@@ -78,8 +78,8 @@ class Lawyer(User):
     bar_association_id = db.Column(db.String(50))
     experience_years = db.Column(db.Integer)
     
-    # Review received relationship
-    reviews = db.relationship('Review', backref='lawyer_association')
+    # # Review received relationship
+    # reviews = db.relationship('Review', backref='lawyer_association', foreign_keys='Review.lawyer_id')
     
     __mapper_args__ = {
         'polymorphic_identity': 'lawyer',
@@ -98,8 +98,8 @@ class Client(User):
     # Additional fields specific to Client
     case_details = db.Column(db.Text)
 
-    # Review provied relationship
-    reviews = db.relationship('Review', backref='client_association')
+    # # Review provied relationship
+    # reviews = db.relationship('Review', backref='client_association', foreign_keys='Review.client_id')
 
     __mapper_args__ = {
         'polymorphic_identity': 'client',
