@@ -14,6 +14,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from api.database import db
 from api.utils.helper import to_dict
 
+# Models Imports:
+from .review import Review
+
 # ----------------------------------------------- #
 
 # SQL Datatype Objects => https://docs.sqlalchemy.org/en/14/core/types.html
@@ -75,6 +78,9 @@ class Lawyer(User):
     bar_association_id = db.Column(db.String(50))
     experience_years = db.Column(db.Integer)
     
+    # Review received relationship
+    reviews = db.relationship('Review', backref='lawyer_association')
+    
     __mapper_args__ = {
         'polymorphic_identity': 'lawyer',
         
@@ -88,12 +94,12 @@ class Lawyer(User):
 class Client(User):
     __tablename__ = 'clients'
     id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    # user = db.relationship('User', backref='client', cascade='all, delete-orphan', single_parent=True)
-    # user = db.relationship("User", back_populates="client")
     
     # Additional fields specific to Client
     case_details = db.Column(db.Text)
 
+    # Review provied relationship
+    reviews = db.relationship('Review', backref='client_association')
 
     __mapper_args__ = {
         'polymorphic_identity': 'client',
