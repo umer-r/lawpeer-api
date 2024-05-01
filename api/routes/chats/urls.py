@@ -5,8 +5,9 @@
             3 - Add check before letting a user join a room                     - [DONE]
             4 - Split check_room_exists and check_user_in_room (or modify)      - []
             5 - Implement adding user to chat room after creation               - []
-            6 - Implement Access control.                                       - 
+            6 - Implement Access control.                                       - [DONE]
             7 - Add Routes for:
+            
                 * ChatRoom:
                 - Create Chat room.                                             - [DONE]
                 - Get all rooms.                                                - [DONE]
@@ -33,12 +34,16 @@ from api.utils.status_codes import Status
 from .room_controllers import create_chat_room, add_users_to_chat_room, check_room, get_all_rooms, get_user_rooms, get_room_by_name, get_room_by_id, delete_room_by_name_or_id
 from .message_controllers import save_message, get_room_messages_by_id
 
+# Decorators import:
+from api.decorators.access_control_decorators import admin_required, user_or_admin_required
+
 chat_routes = Blueprint('chat', __name__)  # Define the chat routes Blueprint
 
 ## --  ChatRoom Routes  --  ##
 
 @chat_routes.route('/chat-rooms', methods=['POST'])
 @jwt_required()
+@user_or_admin_required
 def create_new_chat_room():
     data = request.get_json()
     name = data.get('name')
@@ -52,6 +57,7 @@ def create_new_chat_room():
     
 @chat_routes.route('/chat-rooms', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_all():
     rooms = get_all_rooms()
     if rooms:
@@ -77,14 +83,15 @@ def room_by_name(name):
     
     return jsonify({'message': f'No Chat room: {name} found'}), Status.HTTP_404_NOT_FOUND
 
-@chat_routes.route('/chat-rooms/user/<int:user_id>', methods=['GET'])
+@chat_routes.route('/chat-rooms/user/<int:id>', methods=['GET'])
 @jwt_required()
-def user_rooms(user_id):
-    rooms = get_user_rooms(user_id)
+@user_or_admin_required
+def user_rooms(id):
+    rooms = get_user_rooms(id)
     if rooms:
         return jsonify([room.to_dict() for room in rooms]), Status.HTTP_200_OK
     
-    return jsonify({'message': f'No Chat rooms found for user: {user_id}'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'message': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
 
 ## --  ChatRoom Routes  --  # END #
 
