@@ -44,7 +44,6 @@ chat_routes = Blueprint('chat', __name__)  # Define the chat routes Blueprint
 
 @chat_routes.route('/chat-rooms', methods=['POST'])
 @jwt_required()
-@user_or_admin_required
 def create_new_chat_room():
     data = request.get_json()
     name = data.get('name')
