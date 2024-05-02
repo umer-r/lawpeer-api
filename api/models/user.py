@@ -75,6 +75,7 @@ class Lawyer(User):
     id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     
     # Additional fields specific to Lawyer
+    about = db.Column(db.Text)
     bar_association_id = db.Column(db.String(50))
     experience_years = db.Column(db.Integer)
     

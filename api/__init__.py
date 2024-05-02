@@ -31,7 +31,6 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
-from flask_socketio import SocketIO
 from flasgger import Swagger
 import os
 
@@ -39,6 +38,7 @@ import os
 from api.routes.users.urls import user_routes
 from api.routes.admin.urls import admin_routes
 from api.routes.chats.urls import chat_routes
+from api.routes.contracts.urls import contract_routes
 
 # Initialize admin:
 from api.routes.admin.controllers import create_super_admin
@@ -89,19 +89,16 @@ def create_app():
     with app.app_context():
         create_super_admin()
 
-    # Register routes
+    # Register routes:
     app.register_blueprint(user_routes, url_prefix='/api/users')
     app.register_blueprint(admin_routes, url_prefix='/api/admin')
-    app.register_blueprint(chat_routes, url_prefix='/api/chat')  # Register chat routes
-
-    
-    # Define SocketIO event handlers in your code (see separate file)
-    # ... (Import and define your chat-related event handlers here)
+    app.register_blueprint(chat_routes, url_prefix='/api/chat')
+    app.register_blueprint(contract_routes, url_prefix='/api/contract')
     
     print(app.url_map)
     
     return app
 
 if __name__ == '__main__':
-    app = create_app()  # Return socketio alongside the app
+    app = create_app()
     app.run()
