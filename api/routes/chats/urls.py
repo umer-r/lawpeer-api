@@ -19,6 +19,7 @@
                 * Message:
                 - Messages for particular chat room.                            - [DONE]
                 - Messages for particular chat room by ChatRoom name.           - []
+                - Save document message                                         - []
 """
 
 # Lib Imports:
