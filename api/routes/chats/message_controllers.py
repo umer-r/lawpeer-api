@@ -19,7 +19,17 @@ def save_message(room_name, message_content, user_id):
     else:
         room_id = 0
     
-    message = Message(sender_id=user_id, content=message_content, chat_room_id=room_id)
+    user = User.query.get(user_id)
+    if user:
+        sender_name = user.first_name + " " + user.last_name
+        if user.profile_image:
+            sender_profile_image = user.profile_image
+        else:
+            sender_profile_image = '/static/stock_user.jpg'
+    else:
+        return None
+    
+    message = Message(sender_id=user_id, sender_name=sender_name, sender_profile_image=sender_profile_image, content=message_content, chat_room_id=room_id)
     db.session.add(message)
     db.session.commit()
     

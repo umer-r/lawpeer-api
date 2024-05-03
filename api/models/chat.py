@@ -14,7 +14,7 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     sender_name = db.Column(db.Text)
     sender_profile_image = db.Column(db.Text)
-    # recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
     content = db.Column(db.Text)
     created = db.Column(db.DateTime(timezone=True), default=datetime.now)
     
@@ -26,6 +26,8 @@ class Message(db.Model):
         return {
             'id': self.id,
             'sender_id': self.sender_id,
+            'sender_name': self.sender_name,
+            'sender_profile_image': self.sender_profile_image,
             'content': self.content,
             'created': self.created.isoformat()  # Convert datetime to ISO 8601 formatted string
             # Add other attributes as needed
