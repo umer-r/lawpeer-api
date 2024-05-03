@@ -6,6 +6,8 @@
             4 - Split check_room_exists and check_user_in_room (or modify)      - []
             5 - Implement adding user to chat room after creation               - []
             6 - Implement Access control.                                       - [DONE]
+            8 - Implement ONLY Admin can create chat rooms for other people.
+                User can not create chat rooms for other people.
             7 - Add Routes for:
             
                 * ChatRoom:
@@ -106,9 +108,14 @@ def handle_join_room(data):
     
     if check_room(room, user_id):
         join_room(room)
-        emit("join", {"data": f"id: {request.sid}", "status": f"{username} is Online."}, to=room)
+        emit("join", 
+             {  "sid": request.sid, 
+                "success": True,
+                "is_online": True, 
+                "status": f"{username} is Online."}, 
+            to=room)
     else:
-        emit("join", {"error": "Chat room not accessible."})
+        emit("join", {"error": "Chat room not accessible.", "success": False})
 
 @socketio.on('send_message')
 @jwt_required()
@@ -120,9 +127,15 @@ def handle_send_message(data):
     if check_room(room, user_id):
         join_room(room)
         save_message(room_name=room, message_content=message_content, user_id=user_id)
-        emit("send_message", {"data": f"from: {user_id}", "message": f"{message_content}"}, to=room)
+        emit("send_message", 
+             {  "status": "message sent", 
+                "success": True,
+                "from": user_id, 
+                "message": message_content, 
+                "room": room }, 
+        to=room)
     else:
-        emit("send_message", {"error": "Chat room not accessible."})
+        emit("send_message", {"error": "Chat room not accessible.", "success": False})
 
 @socketio.on('leave_room')
 def handle_leave_room(data):

@@ -12,7 +12,8 @@ def get_all_rooms():
     return ChatRoom.query.all()
 
 def get_user_rooms(id):
-    return ChatRoom.query.filter_by(creator_id=id).all()
+    # Query rooms where the user_ids array contains the specified id
+    return ChatRoom.query.filter(ChatRoom.user_ids.contains([id])).all()
 
 def get_room_by_name(name):
     return ChatRoom.query.filter_by(name=name).first()
