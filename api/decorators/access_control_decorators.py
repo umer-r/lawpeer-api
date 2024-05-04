@@ -5,6 +5,8 @@ from api.utils.status_codes import Status
 
 def admin_required(func):
     """
+    -- AC: Only Admin Can Access --
+    
     Decorator to enforce that the user accessing the endpoint is an admin.
 
     Args:
@@ -25,6 +27,8 @@ def admin_required(func):
 
 def super_admin_required(func):
     """
+    -- AC: Only Super Admin Can Access --
+    
     Decorator to enforce that the user accessing the endpoint is a super admin.
 
     Args:
@@ -45,6 +49,8 @@ def super_admin_required(func):
 
 def super_or_current_admin_required(func):
     """
+    -- AC: Super Admin Or Current Admin can access (no other admin can access) --
+    
     Decorator to enforce that the user accessing the endpoint is either the super admin or the current admin.
 
     Args:
@@ -66,6 +72,8 @@ def super_or_current_admin_required(func):
 
 def current_admin_required(func):
     """
+    -- AC: Only Admin who requested Can Access --
+    
     Decorator to enforce that the user accessing the endpoint is the same as the requested admin.
 
     Args:
@@ -89,6 +97,8 @@ def current_admin_required(func):
 
 def user_or_admin_required(func):
     """
+    -- AC: Only Current User who requested or Admin Can Access --
+    
     Decorator to enforce that the user accessing the endpoint is either the requested user or an admin.
 
     Args:
@@ -111,6 +121,8 @@ def user_or_admin_required(func):
 
 def user_required(func):
     """
+    -- AC: Only Current User Can Access --
+    
     Decorator to enforce that the user accessing the endpoint is the same as the requested user.
 
     Args:
