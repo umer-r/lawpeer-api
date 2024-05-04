@@ -18,8 +18,15 @@ class Contract(db.Model):
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     
-    # Approval & ending:
+    # Payment:
+    price = db.Column(db.Integer, nullable=False)
+    is_paid = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Approval:
     is_accepted = db.Column(db.Boolean, default=False, nullable=False)
+    accepted_on = db.Column(db.DateTime(timezone=True))
+    
+    # Ending:
     is_ended = db.Column(db.Boolean, default=False, nullable=False)
     ended_on = db.Column(db.DateTime(timezone=True))
     ended_reason = db.Column(db.Text)
@@ -30,40 +37,15 @@ class Contract(db.Model):
     
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
     client = db.relationship('Client', backref='contracts')
-
-    meetings = db.relationship('Meeting', backref='contract', cascade='all, delete-orphan')
     
     # ForeignKeyConstraint to link contracts and reviews:
     review_id = db.Column(db.Integer, db.ForeignKey('reviews.id'))
     review = db.relationship('Review', backref='contract', uselist=False)
+    
+    # meetings = db.relationship('Meeting', backref='contract', cascade='all, delete-orphan')
 
     def to_dict(self):
         return to_dict(self)
 
     def __repr__(self):
         return f"<Contract {self.id}>"
-
-
-class Meeting(db.Model):
-    __tablename__ = 'meetings'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    created = db.Column(db.DateTime(timezone=True), default=datetime.now)
-    updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
-    location = db.Column(db.String(100))
-    
-    # Payment:
-    is_paid = db.Column(db.Boolean, default=False, nullable=False)
-    
-    # Completion:
-    is_completed = db.Column(db.Boolean, default=False, nullable=False)
-    completed_on = db.Column(db.DateTime(timezone=True))
-
-    # Relationship
-    contract_id = db.Column(db.Integer, db.ForeignKey('contracts.id'), nullable=False)
-
-    def to_dict(self):
-        return to_dict(self)
-
-    def __repr__(self):
-        return f"<Meeting {self.id}>"
