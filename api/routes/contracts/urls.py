@@ -6,13 +6,12 @@
 # Lib Imports
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flasgger import swag_from
 
 # Module Imports
-from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, accept_user_contract
+from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, accept_user_contract, end_user_contract
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
-from api.decorators.access_control_decorators import admin_required, super_admin_required, super_or_current_admin_required
+from api.decorators.access_control_decorators import admin_required, user_or_admin_required
 
 # ----------------------------------------------- #
 
@@ -68,6 +67,17 @@ def get_user_contracts():
     
     return jsonify({'message': 'No contracts found'}), Status.HTTP_404_NOT_FOUND
 
+@contract_routes.route('/user/<int:id>', methods=['GET'])
+@jwt_required()
+@user_or_admin_required
+def get_user_contracts_id(id):
+    
+    contracts = get_all_user_contracts(id)
+    if contracts:
+        return jsonify([contract.to_dict() for contract in contracts]), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'No contracts found'}), Status.HTTP_404_NOT_FOUND
+
 @contract_routes.route('/accept-contract/<int:id>', methods=['GET'])
 @jwt_required()
 def approve_contract(id):
@@ -75,3 +85,16 @@ def approve_contract(id):
     approver_id = get_jwt_identity().get('id')
     response, status_code = accept_user_contract(contract_id=id, approver_id=approver_id)
     return jsonify(response), status_code
+
+@contract_routes.route('/end-contract/<int:id>', methods=['POST'])
+@jwt_required()
+@check_mandatory(['ended_reason'])
+def end_contract(id):
+    
+    data = request.get_json()
+    reason = data.get('ended_reason')
+    contract = end_user_contract(contract_id=id, reason=reason)
+    if contract:
+        return jsonify(contract.to_dict()), Status.HTTP_200_OK
+    return jsonify({'message': 'Contract not found'}), Status.HTTP_404_NOT_FOUND
+

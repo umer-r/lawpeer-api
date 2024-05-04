@@ -1,5 +1,5 @@
 # Module Imports
-from flask import jsonify
+from datetime import datetime
 from api.database import db
 from api.models.contract import Contract
 from api.utils.status_codes import Status
@@ -43,3 +43,13 @@ def accept_user_contract(contract_id, approver_id):
     db.session.commit()
 
     return {'message': f'Success! User: {approver_id} accepted the Contract.'}, Status.HTTP_200_OK
+
+def end_user_contract(contract_id, reason):
+    contract = Contract.query.get(contract_id)
+    if contract:
+        contract.is_ended = True
+        contract.ended_on = datetime.now()
+        contract.ended_reason = reason
+        db.session.commit()
+        return contract
+    return None
