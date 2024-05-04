@@ -20,8 +20,9 @@ class Contract(db.Model):
     
     # Approval & ending:
     is_accepted = db.Column(db.Boolean, default=False, nullable=False)
-    ended_on = db.Column(db.DateTime(timezone=True))
     is_ended = db.Column(db.Boolean, default=False, nullable=False)
+    ended_on = db.Column(db.DateTime(timezone=True))
+    ended_reason = db.Column(db.Text)
 
     # Relationships:
     lawyer_id = db.Column(db.Integer, db.ForeignKey('lawyers.id'), nullable=False)
@@ -50,6 +51,13 @@ class Meeting(db.Model):
     created = db.Column(db.DateTime(timezone=True), default=datetime.now)
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
     location = db.Column(db.String(100))
+    
+    # Payment:
+    is_paid = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Completion:
+    is_completed = db.Column(db.Boolean, default=False, nullable=False)
+    completed_on = db.Column(db.DateTime(timezone=True))
 
     # Relationship
     contract_id = db.Column(db.Integer, db.ForeignKey('contracts.id'), nullable=False)
