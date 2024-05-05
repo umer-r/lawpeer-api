@@ -41,6 +41,7 @@ from api.routes.users.urls import user_routes
 from api.routes.admin.urls import admin_routes
 from api.routes.chats.urls import chat_routes
 from api.routes.contracts.urls import contract_routes
+from api.routes.complaints.urls import complaint_routes
 
 # Initialize admin:
 from api.routes.admin.controllers import create_super_admin
@@ -99,6 +100,7 @@ def create_app():
     app.register_blueprint(admin_routes, url_prefix='/api/admin')
     app.register_blueprint(chat_routes, url_prefix='/api/chat')
     app.register_blueprint(contract_routes, url_prefix='/api/contract')
+    app.register_blueprint(complaint_routes, url_prefix='/api/complaint')
     
     print(app.url_map)
     
