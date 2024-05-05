@@ -10,4 +10,5 @@ class Status:
     HTTP_404_NOT_FOUND = 404
     HTTP_409_CONFLICT = 409                 # Conflict - For Duplicate Content
     HTTP_422_UNPROCESSABLE_ENTITY = 422     # For Missing keys/fields
+    HTTP_429_TOO_MANY_REQUESTS = 429
     HTTP_500_INTERNAL_SERVER_ERROR = 500

@@ -6,9 +6,10 @@
 # Lib Imports
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import stripe
 
 # Module Imports
-from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, accept_user_contract, end_user_contract
+from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, accept_user_contract, end_user_contract, process_contract_payment
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required
@@ -19,7 +20,7 @@ contract_routes = Blueprint('contract', __name__)
 
 @contract_routes.route('/', methods=['POST'])
 @jwt_required()
-@check_mandatory(['title', 'description', 'client_id', 'lawyer_id'])
+@check_mandatory(['title', 'description', 'client_id', 'lawyer_id', 'price'])
 def create_new_contract():
         
     data = request.get_json()
@@ -28,8 +29,9 @@ def create_new_contract():
     description = data.get('description')
     client_id = data.get('client_id')
     lawyer_id = data.get('lawyer_id')
+    price = data.get('price')
     
-    new_contract = create_contract(creator_id, title, description, lawyer_id, client_id)
+    new_contract = create_contract(creator_id, title, description, lawyer_id, client_id, price)
     if new_contract is None:
         return jsonify({'message': 'Error while creating contract'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
     
@@ -98,3 +100,16 @@ def end_contract(id):
         return jsonify(contract.to_dict()), Status.HTTP_200_OK
     return jsonify({'message': 'Contract not found'}), Status.HTTP_404_NOT_FOUND
 
+
+@contract_routes.route('/payment', methods=['POST'])
+@jwt_required()
+@check_mandatory(['contract_id', 'token'])
+def contract_payment():
+    data = request.get_json()
+    
+    # Extract necessary data from the request
+    contract_id = data.get('contract_id')
+    token = data.get('token')  # This should be the Stripe token obtained from the client-side
+    
+    reponse, status_code = process_contract_payment(contract_id=contract_id, token=token)
+    return jsonify(reponse), status_code

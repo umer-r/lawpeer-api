@@ -18,6 +18,7 @@
         - os: Operating system module for interacting with the operating system.
         - socketio: Socket.IO library for real-time communication.
         - flasgger: Api documentation library provided by swagger.
+        - stripe: A payment integration gateway.
 
 
     Functions:
@@ -32,6 +33,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
 from flasgger import Swagger
+import stripe
 import os
 
 # Import Routes:
@@ -84,6 +86,9 @@ def create_app():
     migrate = Migrate()
     db.init_app(app)
     migrate.init_app(app, db)
+    
+    # Stripe:
+    stripe.api_key = app.config['STRIPE_SEC_KEY']
 
     # Call create_super_admin within application context
     with app.app_context():
