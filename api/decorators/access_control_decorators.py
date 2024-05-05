@@ -141,3 +141,47 @@ def user_required(func):
             return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
         return func(*args, **kwargs)
     return decorated_function
+
+def client_required(func):
+    """
+    -- AC: Only Client Can Access --
+    
+    Decorator to enforce that the user accessing the endpoint is a client.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The decorated function.
+    """
+    
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        # Authorization logic to check if user is a super admin
+        client = get_jwt_identity()
+        if client['role'] != 'client':
+            return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
+        return func(*args, **kwargs)
+    return decorated_function
+
+def lawyer_required(func):
+    """
+    -- AC: Only Lawyer Can Access --
+    
+    Decorator to enforce that the user accessing the endpoint is a client.
+
+    Args:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The decorated function.
+    """
+    
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        # Authorization logic to check if user is a super admin
+        lawyer = get_jwt_identity()
+        if lawyer['role'] != 'lawyer':
+            return jsonify({'message': 'Unauthorized access'}), Status.HTTP_401_UNAUTHORIZED
+        return func(*args, **kwargs)
+    return decorated_function
