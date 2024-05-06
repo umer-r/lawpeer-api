@@ -69,5 +69,8 @@ def to_dict(instance):
 
         Returns:
             dict: Dictionary representation of the SQLAlchemy model instance.
+            
+        Reference:
+            How to serialize SqlAlchemy PostgreSQL Query to JSON => https://stackoverflow.com/a/46180522
     """
     return {c.key: getattr(instance, c.key) for c in inspect(instance).mapper.column_attrs}
