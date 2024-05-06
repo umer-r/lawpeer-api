@@ -1,18 +1,23 @@
 """
-    TODO:   1 - Implement JWT access control                                                - []
-            2 - Implement average rating for get_all_lawyer route via controller            - 
+    TODO:   1 - Implement JWT access control                                                - [DONE]
+            2 - Implement average rating for get_all_lawyer route via controller            - [DONE] -> In User Model.
+            3 - create_review:
+                - Check if contract exists.                                                 - [DONE]
+                - Check if contract is ended.                                               - [DONE]
+                - Check if a review is already present for a contract.                      - [DONE]
+                - Update the contract.review_id field.                                      - [DONE]
 """
 
 # Lib Imports:
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Controller Imports:
 from .controllers import create_new_review, get_all_reviews, get_review_by_id, delete_review_by_id, get_client_reviews, get_lawyer_reviews
 
 # Decorators Imports:
 from api.decorators.mandatory_keys import check_mandatory
-from api.decorators.access_control_decorators import user_or_admin_required, admin_required, client_required
+from api.decorators.access_control_decorators import client_required
 
 # Module Imports:
 from api.utils.status_codes import Status
@@ -32,13 +37,11 @@ def create_review():
     contract_id = data.get('contract_id')
     rating = data.get('rating')
     review_text = data.get('review_text')
-    client_id = data.get('client_id')
+    client_id = get_jwt_identity().get('id')
     lawyer_id = data.get('lawyer_id')
     
-    review = create_new_review(contract_id=contract_id, client_id=client_id, lawyer_id=lawyer_id, rating=rating, review_text=review_text)
-    if review:
-        return jsonify({'message': 'Review created successfully'}), Status.HTTP_201_CREATED
-    return jsonify({'message': 'Contract does not exists or is not ended yet.'}), Status.HTTP_400_BAD_REQUEST
+    response, status_code = create_new_review(contract_id=contract_id, client_id=client_id, lawyer_id=lawyer_id, rating=rating, review_text=review_text)
+    return jsonify(response), status_code
 
 # READ-1: Retrieve all reviews
 @review_routes.route('/', methods=['GET'])
@@ -60,6 +63,24 @@ def get_review(review_id):
     
     return jsonify({'message': 'Review not found'}), Status.HTTP_404_NOT_FOUND
 
+# READ-3: Client specific Reviews
+@review_routes.route('/client/<int:id>', methods=['GET'])
+def get_all_client(id):
+    reviews = get_client_reviews(id)
+    if reviews:
+        return jsonify([review.to_dict() for review in reviews]), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
+
+# READ-4: Lawyer specific Reviews
+@review_routes.route('/lawyer/<int:id>', methods=['GET'])
+def get_all_lawyer(id):
+    reviews = get_lawyer_reviews(id)
+    if reviews:
+        return jsonify([review.to_dict() for review in reviews]), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
+
 # DELETE: delete review by id
 @review_routes.route('/<int:review_id>', methods=['DELETE'])
 @jwt_required()
@@ -70,19 +91,3 @@ def delete_review(review_id):
         return jsonify({'message': f'Review with id {id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     
     return jsonify({'message': 'Review not found'}), Status.HTTP_404_NOT_FOUND
-
-@review_routes.route('/client/<int:client_id>', methods=['GET'])
-def get_all_client(id):
-    reviews = get_client_reviews(id)
-    if reviews:
-        return jsonify(reviews.to_dict()), Status.HTTP_200_OK
-    
-    return jsonify({'message': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
-
-@review_routes.route('/lawyer/<int:lawyer_id>', methods=['GET'])
-def get_all_lawyer(id):
-    reviews = get_lawyer_reviews(id)
-    if reviews:
-        return jsonify(reviews.to_dict()), Status.HTTP_200_OK
-    
-    return jsonify({'message': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND

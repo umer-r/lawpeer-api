@@ -43,8 +43,6 @@ class Contract(db.Model):
     # ForeignKeyConstraint to link contracts and reviews:
     review_id = db.Column(db.Integer, db.ForeignKey('reviews.id'))
     review = db.relationship('Review', backref='contract', uselist=False)
-    
-    # meetings = db.relationship('Meeting', backref='contract', cascade='all, delete-orphan')
 
     def to_dict(self):
         return to_dict(self)

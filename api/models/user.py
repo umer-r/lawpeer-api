@@ -1,7 +1,8 @@
 """
-    TODO:   1 - CASCADE upon deletion from users.               - [DONE] -> VIA Controller.
-            2 - Remove status or reason field from users.       - [HALT]
-            3 - Move toDict to utils.helper                     - [DONE]
+    TODO:   1 - CASCADE upon deletion from users.                               - [DONE] -> VIA Controller.
+            2 - Remove status or reason field from users.                       - [HALT]
+            3 - Move toDict to utils.helper                                     - [DONE]
+            4 - Implement functions and fields for average rating of user       - [DONE]
 """
 
 # Lib Imports
@@ -62,8 +63,28 @@ class User(db.Model):
         'polymorphic_identity': 'user',
         'polymorphic_on': role,
     }
+    
+    # Additional fields for average rating & total rating
+    total_ratings = db.Column(db.Float, default=0)
+    average_rating = db.Column(db.Float, default=0)
+    num_reviews = db.Column(db.Integer, default=0)
+    
+    def update_average_rating(self):
+        if self.num_reviews > 0:
+            self.average_rating = min(self.total_ratings / self.num_reviews, 5.0)
+        else:
+            self.average_rating = 0
 
-    # How to serialize SqlAlchemy PostgreSQL Query to JSON => https://stackoverflow.com/a/46180522
+    def add_review(self, rating):
+        self.total_ratings += rating
+        self.num_reviews += 1
+        self.update_average_rating()
+    
+    def subtract_review(self, rating):
+        self.total_ratings -= rating
+        self.num_reviews -= 1
+        self.update_average_rating()
+    
     def to_dict(self):
         return to_dict(self)
 
