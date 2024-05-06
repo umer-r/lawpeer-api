@@ -239,7 +239,6 @@ def get_user(id):
 @user_routes.route('/', methods=['GET'])
 @jwt_required()
 @swag_from(methods=['GET'])
-@admin_required
 def get_all():
     """
     Endpoint to retrieve all users.
