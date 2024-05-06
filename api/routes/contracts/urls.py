@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import stripe
 
 # Module Imports
-from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, accept_user_contract, end_user_contract, process_contract_payment
+from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, accept_user_contract, end_user_contract, create_checkout_session
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required
@@ -100,16 +100,13 @@ def end_contract(id):
         return jsonify(contract.to_dict()), Status.HTTP_200_OK
     return jsonify({'message': 'Contract not found'}), Status.HTTP_404_NOT_FOUND
 
-
-@contract_routes.route('/payment', methods=['POST'])
-@jwt_required()
-@check_mandatory(['contract_id', 'token'])
-def contract_payment():
+@contract_routes.route('/create-checkout-session', methods=['POST'])
+@check_mandatory(['contract_id', 'success_url', 'cancel_url'])
+def checkout_session():
     data = request.get_json()
-    
-    # Extract necessary data from the request
     contract_id = data.get('contract_id')
-    token = data.get('token')  # This should be the Stripe token obtained from the client-side
-    
-    reponse, status_code = process_contract_payment(contract_id=contract_id, token=token)
-    return jsonify(reponse), status_code
+    success_url = data.get('success_url')
+    cancel_url = data.get('cancel_url')
+
+    response, status_code = create_checkout_session(contract_id, success_url, cancel_url)
+    return jsonify(response), status_code

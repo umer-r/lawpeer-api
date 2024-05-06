@@ -1,5 +1,7 @@
 # Module Imports
 import stripe
+from stripe import StripeError, checkout
+
 from datetime import datetime
 from api.database import db
 from api.models.contract import Contract
@@ -62,57 +64,36 @@ def end_user_contract(contract_id, reason):
         return contract
     return None
 
-def process_contract_payment(contract_id, token):
-    # Retrieve the contract from the database
-    contract = Contract.query.get(contract_id)
+def create_checkout_session(id, success_url, cancel_url):
+    
+    # Retrieve contract details
+    contract = Contract.query.get(id)
     if not contract:
-        return {'error': 'Contract not found.'}, Status.HTTP_404_NOT_FOUND
-    
-    # Calculate the amount to charge (in cents or your currency's smallest unit)
-    amount = contract.price
-    
+        return {'message': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
+
+    # Check if the contract price is valid
+    price = contract.price
+    if not price:
+        return {'message': 'Contract price is missing or invalid'}, Status.HTTP_400_BAD_REQUEST
+
     try:
-        # Create a charge using the Stripe token
-        charge = stripe.Charge.create(
-            amount=amount,
-            currency='usd',  # Change this to your desired currency
-            source=token,
-            description='Payment for contract'
+        # Create Stripe Checkout session
+        session = checkout.Session.create(
+            success_url=success_url,
+            cancel_url=cancel_url,
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price_data": {
+                        "unit_amount": price * 100, 
+                        "currency": "usd", 
+                        "product": "Contract"
+                    }, 
+                    "quantity": 1
+                }],
+            mode="payment",
         )
-        
-        # Update contract fields based on payment success
-        contract.is_paid = True
-        contract.accepted_on = datetime.now()
-        
-        # Commit changes to the database
-        db.session.commit()
-        
-        return {'message': 'Payment successful.'}, Status.HTTP_200_OK
+        return {'session_id': session.id, 'success_url': session.success_url, 'cancel_url': session.cancel_url}, Status.HTTP_200_OK
     
-    except stripe.error.CardError as e:
-        # Since it's a decline, stripe.error.CardError will be caught
-        return {'error': str(e)}, Status.HTTP_400_BAD_REQUEST
-    
-    except stripe.error.RateLimitError as e:
-        # Too many requests made to the API too quickly
-        return {'error': 'Rate limit error.'}, Status.HTTP_429_TOO_MANY_REQUESTS
-    
-    except stripe.error.InvalidRequestError as e:
-        # Invalid parameters were supplied to Stripe's API
-        return {'error': 'Invalid parameters.'}, Status.HTTP_400_BAD_REQUEST
-    
-    except stripe.error.AuthenticationError as e:
-        # Authentication with Stripe's API failed
-        return {'error': 'Authentication failed.'}, Status.HTTP_401_UNAUTHORIZED
-    
-    except stripe.error.APIConnectionError as e:
-        # Network communication with Stripe failed
-        return {'error': 'Network communication failed.'}, Status.HTTP_500_INTERNAL_SERVER_ERROR
-    
-    except stripe.error.StripeError as e:
-        # Generic error from Stripe
-        return {'error': 'Stripe error.'}, Status.HTTP_500_INTERNAL_SERVER_ERROR
-    
-    except Exception as e:
-        # Something else happened, completely unrelated to Stripe
-        return {'error': 'An error occurred.'}, Status.HTTP_500_INTERNAL_SERVER_ERROR
+    except StripeError as e:
+        return {'message': str(e)}, Status.HTTP_500_INTERNAL_SERVER_ERROR
