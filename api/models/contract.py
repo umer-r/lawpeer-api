@@ -6,6 +6,8 @@ from api.database import db
 from api.utils.helper import to_dict
 from .user import Client, Lawyer
 
+# ----------------------------------------------- #
+
 class Contract(db.Model):
     __tablename__ = 'contracts'
 
