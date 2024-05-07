@@ -64,8 +64,19 @@ def get_complaint(id):
 @complaint_routes.route('/user/<int:id>', methods=['GET'])
 @jwt_required()
 @user_or_admin_required
-def user_complaints(id):
+def user_complaints_by_id(id):
     
+    complaints = get_user_complaints(id)
+    if complaints:
+        return jsonify([complaint.to_dict() for complaint in complaints]), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'No complaints found'}), Status.HTTP_404_NOT_FOUND
+
+@complaint_routes.route('/my-complaints', methods=['GET'])
+@jwt_required()
+def user_complaints():
+    
+    id = get_jwt_identity().get('id')
     complaints = get_user_complaints(id)
     if complaints:
         return jsonify([complaint.to_dict() for complaint in complaints]), Status.HTTP_200_OK
