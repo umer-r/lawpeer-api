@@ -17,6 +17,7 @@ from api.utils.helper import to_dict
 
 # Models Imports:
 from .review import Review
+from .skill import lawyer_skills
 
 # ----------------------------------------------- #
 
@@ -100,8 +101,8 @@ class Lawyer(User):
     bar_association_id = db.Column(db.String(50))
     experience_years = db.Column(db.Integer)
     
-    # # Review received relationship
-    # reviews = db.relationship('Review', backref='lawyer_association', foreign_keys='Review.lawyer_id')
+    # Relationship with skills
+    skills = db.relationship('Skill', secondary=lawyer_skills, backref=db.backref('lawyers', lazy='dynamic'))
     
     __mapper_args__ = {
         'polymorphic_identity': 'lawyer',
