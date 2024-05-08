@@ -188,7 +188,24 @@ def change_password(user_id, prev_password, new_password):
         else:
             return False
     return None
-    
+
+def reset_password(email, new_password):
+    user = User.query.filter_by(email=email).first()
+    hashed_password = hash_password(password=new_password)
+    if user:
+        user.password = hashed_password
+        db.session.commit()
+        return user
+    return None
+
+def verify_user_account(email):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.is_verified = True
+        db.session.commit()
+        return user
+    return None
+
 # -- Lawyers Specific -- #
 
 def get_all_lawyers():

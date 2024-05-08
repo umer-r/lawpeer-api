@@ -14,10 +14,13 @@
 # Lib Imports
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+from flask_mail import Message
 from flasgger import swag_from
 
 # Module Imports
-from api.routes.admin.controllers import create_admin, update_admin, delete_admin, get_admin_by_id, get_all_admin
+from api.extentions.mail import mail
+from api.utils.otp_generator import generate_otp, save_otp, verify_otp, delete_all_otps
+from api.routes.admin.controllers import create_admin, update_admin, delete_admin, get_admin_by_id, get_all_admin, reset_password
 from api.utils.token_generator import generate_admin_access_token
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
@@ -266,3 +269,38 @@ def login():
         return jsonify(access_token=token), Status.HTTP_200_OK
     
     return jsonify({'message': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
+
+@admin_routes.route('/forgot-password-otp', methods=['POST'])
+@check_mandatory(['email'])
+def forgot_pass():
+    email = request.json.get('email')
+    
+    otp = generate_otp()
+    save_otp(email, otp)
+
+    msg = Message('Forgot Password - OTP', sender='info.lawpeer@gmail.com', recipients=[email])
+    msg.body = f'Your OTP for resetting the password is: {otp}'
+    
+    try:
+        mail.send(msg)
+        return jsonify({'message': 'OTP sent successfully'}), Status.HTTP_200_OK
+    except Exception as e:
+        delete_all_otps(email)
+        return jsonify({'error': str(e)}), Status.HTTP_500_INTERNAL_SERVER_ERROR
+  
+@admin_routes.route('/reset-password', methods=['POST'])
+@check_mandatory(['email', 'new_password', 'otp'])
+def password_reset():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+    new_password = request.json.get('new_password')
+    
+    if verify_otp(email, otp):
+        resetted_pass = reset_password(email, new_password)
+        if resetted_pass:
+          delete_all_otps(email)
+          return jsonify({'message': 'Password reset successfully'}), Status.HTTP_200_OK
+        else:
+         return jsonify({'error': f'Admin with email: {email} not found'}), Status.HTTP_404_NOT_FOUND 
+    else:
+        return jsonify({'error': 'Invalid OTP or OTP expired'}), Status.HTTP_400_BAD_REQUEST

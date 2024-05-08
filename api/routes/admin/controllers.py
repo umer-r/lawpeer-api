@@ -161,3 +161,12 @@ def create_super_admin():
         )
 
     return super_admin
+
+def reset_password(email, new_password):
+    admin = Admin.query.filter_by(email=email).first()
+    hashed_password = hash_password(password=new_password)
+    if admin:
+        admin.password = hashed_password
+        db.session.commit()
+        return admin
+    return None

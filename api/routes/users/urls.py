@@ -6,7 +6,7 @@
             5  - Change Status 400 to 422 UNPROCESSABLE_ENTITY.                          - [DONE]
             6  - Implement Profile picture send back functionality in get user by ID.    - [DONE]
             7  - Implement Refresh Token Logic.                                          - [HALT] -> Moved to (9).
-            8  - Implement Email verification for users.                                 - 
+            8  - Implement Email verification for users.                                 - [DONE]
             9  - Change the Access Token's Settings (Time -> 7 days, Secret key).        - [DONE]
             10 - Change JWT access to get_user_by_id().                                  - [DONE]
             11 - Add access control - omit fields if not user or admin in (10).          - [DONE]
@@ -17,7 +17,9 @@
             16 - Substitute prefixes in routes with (-) e.g. de-activate                 - [DONE]
             17 - Add Comments.                                                           - []
             18 - Remove JWT from get_user, get_lawyer and get_client                     - [DONE]
-            19 - Make auth_controller or access_checker decorator as well                -
+            19 - Make auth_controller or access_checker decorator as well                - [DONE]
+            20 - Implement forget password functionality.                                - [DONE]
+            
     
     TODO:
         Refactor:
@@ -30,15 +32,25 @@
 # Lib Imports
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+from flask_mail import Message
 from flasgger import swag_from
 
-# Module Imports
-from api.routes.users.controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password
-from api.decorators.mandatory_keys import check_mandatory
-from api.decorators.access_control_decorators import admin_required, user_or_admin_required
+# Extentions Imports:
+from api.extentions.mail import mail
+# from api.__init__ import mail
+
+# Utils Imports:
+from api.utils.otp_generator import save_otp, verify_otp, generate_otp, delete_all_otps
 from api.utils.status_codes import Status
 from api.utils.helper import omit_user_sensitive_fields
 from api.utils.token_generator import generate_user_access_token
+
+# Controllers Imports:
+from .controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password, reset_password, verify_user_account
+
+# Decorators Imports:
+from api.decorators.mandatory_keys import check_mandatory
+from api.decorators.access_control_decorators import admin_required, user_or_admin_required
 
 # ----------------------------------------------- #
 
@@ -637,3 +649,78 @@ def login():
         return jsonify(access_token=token), Status.HTTP_200_OK
     
     return jsonify({'message': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
+
+# -- Forgot Password -- #
+
+@user_routes.route('/forgot-password-otp', methods=['POST'])
+@check_mandatory(['email'])
+def forgot_pass():
+    email = request.json.get('email')
+    
+    otp = generate_otp()
+    save_otp(email, otp, otp_for='password_reset')
+
+    msg = Message('Forgot Password - OTP', sender='info.lawpeer@gmail.com', recipients=[email])
+    msg.body = f'Your OTP for resetting the password is: {otp}'
+    
+    try:
+        mail.send(msg)
+        return jsonify({'message': 'OTP sent successfully'}), Status.HTTP_200_OK
+    except Exception as e:
+        delete_all_otps(email)
+        return jsonify({'error': str(e)}), Status.HTTP_500_INTERNAL_SERVER_ERROR
+  
+@user_routes.route('/reset-password', methods=['POST'])
+@check_mandatory(['email', 'new_password', 'otp'])
+def password_reset():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+    new_password = request.json.get('new_password')
+    
+    if verify_otp(email, otp):
+        resetted_pass = reset_password(email, new_password)
+        if resetted_pass:
+          delete_all_otps(email)
+          return jsonify({'message': 'Password reset successfully'}), Status.HTTP_200_OK
+        else:
+         return jsonify({'error': f'User with email: {email} not found'}), Status.HTTP_404_NOT_FOUND 
+    else:
+        return jsonify({'error': 'Invalid OTP or OTP expired'}), Status.HTTP_400_BAD_REQUEST
+
+# -- Email Verification -- #
+
+@user_routes.route('/verify-email-otp', methods=['POST'])
+@jwt_required()
+@check_mandatory(['email'])
+def verify_email_otp():
+    email = request.json.get('email')
+    
+    otp = generate_otp()
+    save_otp(email, otp, otp_for='email_verification')
+
+    msg = Message('Email Verification - OTP', sender='info.lawpeer@gmail.com', recipients=[email])
+    msg.body = f'Your OTP for email verification is: {otp}'
+    
+    try:
+        mail.send(msg)
+        return jsonify({'message': 'OTP sent successfully'}), Status.HTTP_200_OK
+    except Exception as e:
+        delete_all_otps(email)
+        return jsonify({'error': str(e)}), Status.HTTP_500_INTERNAL_SERVER_ERROR
+      
+@user_routes.route('/verify-email', methods=['POST'])
+@jwt_required()
+@check_mandatory(['email', 'otp'])
+def email_verification():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+    
+    if verify_otp(email, otp):
+        verified = verify_user_account(email)
+        if verified:
+          delete_all_otps(email)
+          return jsonify({'message': 'User account verified!'}), Status.HTTP_200_OK
+        else:
+         return jsonify({'error': f'User with email: {email} not found'}), Status.HTTP_404_NOT_FOUND 
+    else:
+        return jsonify({'error': 'Invalid OTP or OTP expired'}), Status.HTTP_400_BAD_REQUEST
