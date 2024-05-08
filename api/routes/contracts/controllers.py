@@ -66,6 +66,9 @@ def create_checkout_session(id, success_url, cancel_url):
     contract = Contract.query.get(id)
     if not contract:
         return {'error': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
+    
+    if contract.is_paid:
+        return {'error': 'Contract price is already paid'}, Status.HTTP_400_BAD_REQUEST
 
     # Check if the contract price is valid
     price = contract.price
