@@ -50,7 +50,8 @@ from api.routes.admin.controllers import create_super_admin
 # Import Modules:
 from api.database import db
 from api.config.config import Config
-from api.socketio import init_app as init_socketio
+from api.extentions.socketio import init_app as init_socketio
+from api.extentions.mail import init_mail
 
 # ----------------------------------------------- #
 
@@ -78,8 +79,9 @@ def create_app():
     cors_origin = os.environ.get('ALLOWED_ORIGIN')
     CORS(app)
 
-    # Initialize SocketIO
+    # Initialize SocketIO, Flask-Mail
     init_socketio(app)
+    init_mail(app)
     
     # Initialize Swagger
     swagger = Swagger(app)

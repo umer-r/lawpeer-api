@@ -30,7 +30,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_socketio import join_room, leave_room, emit
 
 # Module Imports:
-from api.socketio import socketio
+from api.extentions.socketio import socketio
 from api.utils.status_codes import Status
 
 # Controller Imports:

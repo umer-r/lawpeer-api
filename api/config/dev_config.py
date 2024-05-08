@@ -12,6 +12,11 @@ class DevConfig:
         self.JWT_ACCESS_TOKEN_EXPIRES = 604800
         self.STRIPE_SEC_KEY = os.getenv("STRIPE_SEC_KEY")
         self.STRIPE_PUB_KEY = os.getenv("STRIPE_PUB_KEY")
+        self.MAIL_USERNAME = os.getenv("MAIL_ADDRESS")
+        self.MAIL_PASSWORD = os.getenv("MAIL_PASS")
+        self.MAIL_SERVER = os.getenv("MAIL_SMTP")
+        self.MAIL_PORT = 587
+        self.MAIL_USE_TLS = True
         self.ENV = "development"
         self.DEBUG = True
         self.PORT = 3000
