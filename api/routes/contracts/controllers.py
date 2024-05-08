@@ -1,5 +1,4 @@
 # Module Imports
-import stripe
 from stripe import StripeError, checkout
 
 from datetime import datetime
@@ -9,12 +8,10 @@ from api.utils.status_codes import Status
 
 # ----------------------------------------------- #
 
-def create_contract(creator_id, title, description, lawyer_id, client_id, price, **kwargs):
-    
-    new_contract = Contract(creator_id=creator_id, title=title, description=description, lawyer_id=lawyer_id, client_id=client_id, price=price, **kwargs)
+def create_contract(title, description, lawyer_id, client_id, price, **kwargs):
+    new_contract = Contract(title=title, description=description, lawyer_id=lawyer_id, client_id=client_id, price=price, **kwargs)
     db.session.add(new_contract)
     db.session.commit()
-    
     return new_contract
 
 def get_all_contracts():
@@ -28,53 +25,52 @@ def get_all_contract_by_id(id):
 def get_all_user_contracts(id):
     
     contracts = Contract.query.filter(
-            (Contract.creator_id == id) |
             (Contract.lawyer_id == id) |
             (Contract.client_id == id)
         ).all()
     
     return contracts
 
-def accept_user_contract(contract_id, approver_id):
-    # Check if the contract with the given ID exists
-    contract = Contract.query.get(contract_id)
-    if not contract:
-        return {'message': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
+def delete_contract_by_id(id):
+    contract = Contract.query.get(id)
+    if contract:
+        if contract.is_paid:
+            return {'error': 'Contract is already paid. Can not delete'}, Status.HTTP_400_BAD_REQUEST
+        else:
+            db.session.delete(contract)
+            db.session.commit()
+            return {'message': f'Contract with id {id} deleted successfully'}, Status.HTTP_204_NO_CONTENT
+            
+    return {'error': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
 
-    # Check if the current user is authorized to approve the contract
-    if approver_id == contract.creator_id:
-        return {'message': 'Unauthorized access. Creator cannot accept contract'}, Status.HTTP_401_UNAUTHORIZED
-    if approver_id not in [contract.client_id, contract.lawyer_id]:
-        return {'message': 'Unauthorized access. User not associated with contract'}, Status.HTTP_401_UNAUTHORIZED
-
-    # Update the contract status to approved
-    contract.is_accepted = True
-    contract.accepted_on = datetime.now()
-    db.session.commit()
-
-    return {'message': f'Success! User: {approver_id} accepted the Contract.'}, Status.HTTP_200_OK
-
-def end_user_contract(contract_id, reason):
+def end_user_contract(contract_id, reason, client_id):
     contract = Contract.query.get(contract_id)
     if contract:
-        contract.is_ended = True
-        contract.ended_on = datetime.now()
-        contract.ended_reason = reason
-        db.session.commit()
-        return contract
-    return None
+        if contract.is_paid:
+            if contract.client_id != client_id:
+                return {'error': 'Unauthorized access. Client not associated with the contract'}, Status.HTTP_401_UNAUTHORIZED
+            else:
+                contract.is_ended = True
+                contract.ended_on = datetime.now()
+                contract.ended_reason = reason
+                db.session.commit()
+                return {'message': f'Contract with ID: {contract_id} successfully ended!'}, Status.HTTP_200_OK
+        else:
+            return {'error': 'Cannot end unpaid contracts'}, Status.HTTP_400_BAD_REQUEST
+        
+    return {'error': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
 
 def create_checkout_session(id, success_url, cancel_url):
     
     # Retrieve contract details
     contract = Contract.query.get(id)
     if not contract:
-        return {'message': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
+        return {'error': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
 
     # Check if the contract price is valid
     price = contract.price
     if not price:
-        return {'message': 'Contract price is missing or invalid'}, Status.HTTP_400_BAD_REQUEST
+        return {'error': 'Contract price is missing or invalid'}, Status.HTTP_400_BAD_REQUEST
 
     try:
         # Create Stripe Checkout session
@@ -96,4 +92,4 @@ def create_checkout_session(id, success_url, cancel_url):
         return {'session_id': session.id, 'success_url': session.success_url, 'cancel_url': session.cancel_url}, Status.HTTP_200_OK
     
     except StripeError as e:
-        return {'message': str(e)}, Status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {'error': str(e)}, Status.HTTP_500_INTERNAL_SERVER_ERROR

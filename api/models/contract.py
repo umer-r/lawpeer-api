@@ -16,17 +16,13 @@ class Contract(db.Model):
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
     
     # Description:
-    creator_id = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     
     # Payment:
     price = db.Column(db.Integer, nullable=False)
     is_paid = db.Column(db.Boolean, default=False, nullable=False)
-    
-    # Approval:
-    is_accepted = db.Column(db.Boolean, default=False, nullable=False)
-    accepted_on = db.Column(db.DateTime(timezone=True))
+    paid_on = db.Column(db.DateTime(timezone=True))
     
     # Ending:
     is_ended = db.Column(db.Boolean, default=False, nullable=False)
