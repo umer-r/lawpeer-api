@@ -37,3 +37,31 @@ def check_mandatory(keys):
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+def check_at_least_one_key(keys):
+    """
+    A decorator function to check if at least one key is present in the request data.
+
+    Args:
+        keys (list): A list of strings representing the keys to check.
+
+    Returns:
+        function: A decorator function.
+    """
+    
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Check if the request content type is JSON
+            if request.is_json:
+                data = request.get_json()
+            else:
+                data = request.form.to_dict()
+
+            present_keys = [key for key in keys if key in data]
+            if not present_keys:
+                return jsonify(error=f'At least one of the keys {", ".join(keys)} must be present in the request body'), Status.HTTP_422_UNPROCESSABLE_ENTITY
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
