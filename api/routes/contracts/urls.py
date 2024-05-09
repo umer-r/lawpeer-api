@@ -17,7 +17,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Module Imports
-from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, end_user_contract, create_checkout_session, delete_contract_by_id, stripe_payment_intent
+from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, end_user_contract, create_checkout_session, delete_contract_by_id, stripe_payment_intent, webhook
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required, lawyer_required, client_required
@@ -133,23 +133,7 @@ def pay_contract():
 @contract_routes.route("/stripe", methods=["POST"])
 def stripe_webhook():
     payload = request.data
-    sig_header = request.headers.get("Stripe-Signature")
+    sig_header = request.headers.get("stripe-signature")
 
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET")
-        )
-    except ValueError as e:
-        # Invalid payload
-        return jsonify({"error": str(e)}), 400
-    except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
-        return jsonify({"error": str(e)}), 400
-
-    # Handle the event
-    if event.type == "payment_intent.created":
-        print(f"{event.data.object.metadata['coin']} payment initiated!")
-    elif event.type == "payment_intent.succeeded":
-        print(f"{event.data.object.metadata['coin']} payment succeeded!")
-
-    return jsonify({"ok": True}), 200
+    response, status_code = webhook(payload, sig_header)
+    return jsonify(response), status_code

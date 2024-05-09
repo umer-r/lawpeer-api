@@ -1,5 +1,7 @@
 # Module Imports
+import os
 import stripe
+from datetime import datetime
 from stripe import StripeError, checkout
 
 from datetime import datetime
@@ -123,7 +125,7 @@ def stripe_payment_intent(contract_id, client_id):
             amount=int(amount * 100),
             currency="INR",
             payment_method_types=["card"],
-            metadata={"contract_title": contract.title, "amount": amount, "contract_created": contract.created}
+            metadata={"contract_id": contract.id, "contract_title": contract.title, "amount": amount, "contract_created": contract.created}
         )
 
         client_secret = payment_intent.client_secret
@@ -132,3 +134,28 @@ def stripe_payment_intent(contract_id, client_id):
     except Exception as e:
         print(e)
         return {"message": "Internal Server Error"}, Status.HTTP_500_INTERNAL_SERVER_ERROR
+    
+def webhook(payload, signature):
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, signature, os.environ.get("STRIPE_WEBHOOK_SECRET")
+        )
+    except ValueError as e:
+        # Invalid payload
+        return {"error": str(e)}, Status.HTTP_400_BAD_REQUEST
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return {"error": str(e)}, Status.HTTP_400_BAD_REQUEST
+
+    # Handle the event
+    if event.type == "payment_intent.created":
+        print(f"{event.data.object.metadata['contract_id']} payment initiated!")
+    elif event.type == "payment_intent.succeeded":
+        id = event.data.object.metadata['contract_id']
+        print(f"contract {id} payment succeeded!")
+        contract = Contract.query.get(id)
+        contract.is_paid = True
+        contract.paid_on = datetime.now()
+        db.session.commit()
+
+    return {"ok": True}, Status.HTTP_200_OK
