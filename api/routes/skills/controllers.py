@@ -11,8 +11,8 @@ def get_lawyer_skills(id):
     if lawyer:
         lawyer_skills = [{"id": skill.id, "name": skill.name} for skill in lawyer.skills]
         if lawyer_skills:
-            return lawyer_skills
-    return None
+            return lawyer_skills, True
+    return None, False
 
 def filter_lawyer_by_skill(id):
     skill = Skill.query.get(id)
