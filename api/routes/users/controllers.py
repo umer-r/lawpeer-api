@@ -10,11 +10,13 @@
 
 # Lib Imports:
 from werkzeug.utils import secure_filename
+from sqlalchemy import and_, or_, func
 import os
 
 # Module Imports:
 from api.database import db
 from api.models.user import User, Lawyer, Client
+from api.models.skill import Skill
 from api.utils.hasher import hash_password, verify_password
 from api.utils.helper import allowed_file, get_upload_folder, rename_profile_image
 
@@ -53,7 +55,7 @@ def create_user(email, username, password, first_name, last_name, dob, country, 
     
     return new_user
 
-def get_user_by_id(user_id):
+def get_user_by_id(user_id, is_admin, is_same_user):
     """
         Retrieve a user by their ID.
 
@@ -65,7 +67,14 @@ def get_user_by_id(user_id):
     """
     
     user = User.query.get(user_id)
-    return user if user else None
+    if is_admin == 'admin' or is_same_user:
+        return user if user else None
+    else:
+        if user:
+            if user.is_verified and not user.is_suspended and user.is_active:
+                return user 
+        else:
+            return None
 
 def get_all_users():
     return User.query.all()
@@ -91,7 +100,9 @@ def update_user(user_id, profile_image=None, email=None,
                 user.profile_image = os.path.join('/static', filename).replace('\\', '/')
         
         if email:
-            user.email = email
+            if user.email != email:
+                user.email = email
+                user.is_verified = False
         if username:
             user.username = username
         if dob:
@@ -214,12 +225,68 @@ def verify_user_account(email):
         return user
     return None
 
+def exclude_immature_accounts(users):
+    """
+        Filter out users based on certain conditions.
+        
+        Conditions:
+            - is_verified must be True
+            - is_suspended must be False
+            - is_active must be True
+    """
+    
+    filtered_users = []
+
+    for user in users:
+        if user.is_verified and not user.is_suspended and user.is_active:
+            filtered_users.append(user)
+    return filtered_users
+
 # -- Lawyers Specific -- #
 
-def get_all_lawyers():
-    return User.query.filter_by(role='lawyer').all()
+def get_all_lawyers(is_admin):
+    lawyers = User.query.filter_by(role='lawyer').all()
+    if is_admin == 'admin':
+        return lawyers
+    else:
+        return exclude_immature_accounts(lawyers)
+
+def filter_lawyer_users(is_admin, city=None, skill_ids=None, above_experience_years=None, above_average_rating=None):
+        # Start building the query to filter lawyers
+    query = Lawyer.query
+    
+    # Apply filters based on the provided parameters
+    if city:
+        city_words = city.split()
+        # Construct a pattern with wildcard matching for each word in the city
+        city_patterns = [f'%{word}%' for word in city_words]
+        # Join the individual patterns with OR to match any part of the city name
+        city_pattern = or_(*[func.lower(Lawyer.city).like(func.lower(pattern)) for pattern in city_patterns])
+        # Apply the constructed pattern to the query
+        query = query.filter(city_pattern)    
+    if skill_ids:
+        query = query.filter(Lawyer.skills.any(Skill.id.in_(skill_ids)))
+    
+    if above_experience_years:
+        query = query.filter(Lawyer.experience_years >= above_experience_years)
+    
+    if above_average_rating:
+        query = query.filter(Lawyer.average_rating >= above_average_rating)
+    
+    # Execute the query and fetch filtered lawyers
+    filtered_lawyers = query.all()
+    
+    if is_admin == 'admin':
+        excluded_users = exclude_immature_accounts(filtered_lawyers)
+        return excluded_users
+    else:
+        return filtered_lawyers
 
 # -- Clients Specific -- #
 
-def get_all_clients():
-    return User.query.filter_by(role='client').all()
+def get_all_clients(is_admin):
+    clients = User.query.filter_by(role='client').all()
+    if is_admin == 'admin':
+        return clients
+    else:
+        return exclude_immature_accounts(clients)

@@ -31,7 +31,7 @@
 
 # Lib Imports
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_mail import Message
 from flasgger import swag_from
 
@@ -46,10 +46,10 @@ from api.utils.helper import omit_user_sensitive_fields
 from api.utils.token_generator import generate_user_access_token
 
 # Controllers Imports:
-from .controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password, reset_password, verify_user_account
+from .controllers import create_user, get_all_users, update_user, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password, reset_password, verify_user_account, filter_lawyer_users
 
 # Decorators Imports:
-from api.decorators.mandatory_keys import check_mandatory
+from api.decorators.mandatory_keys import check_mandatory, check_at_least_one_key
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required
 
 # ----------------------------------------------- #
@@ -111,9 +111,9 @@ def create_new_lawyer():
     returned_lawyer = omit_user_sensitive_fields(new_lawyer)
     return jsonify(returned_lawyer), Status.HTTP_200_OK
 
-# JWT Not required - can be accessed outside authorization
 @user_routes.route('/lawyer', methods=['GET'])
 @swag_from(methods=['GET'])
+@jwt_required()
 def all_lawyers():
     """
     Endpoint to retrieve all lawyers.
@@ -128,11 +128,29 @@ def all_lawyers():
       404:
         description: No lawyer user found.
     """
-    
-    lawyers = get_all_lawyers()
+    is_admin = get_jwt_identity().get('role', None)
+    lawyers = get_all_lawyers(is_admin)
     if lawyers:
         return jsonify([lawyer.to_dict() for lawyer in lawyers]), Status.HTTP_200_OK
     return jsonify({'message': 'No lawyer user found'}), Status.HTTP_404_NOT_FOUND
+
+@user_routes.route('/lawyer/filter-lawyers', methods=['POST'])
+@jwt_required()
+@check_at_least_one_key(['city', 'skill_ids', 'above_experience_years', 'above_average_rating'])
+def filter_lawyers():
+    data = request.json
+
+    is_admin = get_jwt_identity.get('role', None)
+    city = data.get('city')
+    skill_ids = data.get('skill_ids', [])
+    above_experience_years = data.get('above_experience_years')
+    above_average_rating = data.get('above_average_rating')
+    
+    lawyers = filter_lawyer_users(is_admin=is_admin, city=city, skill_ids=skill_ids, above_experience_years=above_experience_years, above_average_rating=above_average_rating)
+    if lawyers:
+      return jsonify([lawyer.to_dict() for lawyer in lawyers]), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'No Lawyer user found matching the filters'}), Status.HTTP_404_NOT_FOUND
 
 # -- Client Specific -- #
 
@@ -191,6 +209,7 @@ def create_new_client():
 
 @user_routes.route('/client', methods=['GET'])
 @swag_from(methods=['GET'])
+@jwt_required()
 def all_clients():
     """
     Endpoint to retrieve all clients.
@@ -208,7 +227,8 @@ def all_clients():
         description: No client user found.
     """
     
-    clients = get_all_clients()
+    is_admin = get_jwt_identity().get('role', None)
+    clients = get_all_clients(is_admin)
     if clients:
         return jsonify([client.to_dict() for client in clients]), Status.HTTP_200_OK
     return jsonify({'message': 'No client user found'}), Status.HTTP_404_NOT_FOUND
@@ -217,6 +237,7 @@ def all_clients():
 
 @user_routes.route('/<int:id>', methods=['GET'])
 @swag_from(methods=['GET'])
+@jwt_required()
 def get_user(id):
     """
     Endpoint to retrieve user details by user ID.
@@ -240,7 +261,10 @@ def get_user(id):
         description: User not found.
     """
     
-    user = get_user_by_id(id)
+    is_admin = get_jwt_identity().get('role', None)
+    current_user = get_jwt_identity().get('id', None)
+    is_same_user = True if current_user == id else False
+    user = get_user_by_id(id, is_admin, is_same_user)
     
     if user:
       returned_user = omit_user_sensitive_fields(user)

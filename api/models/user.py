@@ -32,7 +32,7 @@ class User(db.Model):
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)     # The Date of the Instance Update => Changed with Every Update
     
     # Account Settings:
-    is_active = db.Column(db.Boolean, default=False, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     is_suspended = db.Column(db.Boolean, default=False, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     status = db.Column(db.String(150))
