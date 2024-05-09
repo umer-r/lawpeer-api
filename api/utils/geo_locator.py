@@ -10,12 +10,12 @@ def get_address(latitude, longitude):
     full_address = location.address
 
     country = address.get('address', {}).get('country', '')
-    city = address.get('address', {}).get('city', '')
-    postal_code = address.get('address', {}).get('postcode', '')
+    city = address.get('address', {}).get('city') or address.get('address', {}).get('residential') or address.get('address', {}).get('town', '')
+    postal_code = address.get('address', {}).get('postcode', None)
 
     return country, city, postal_code, full_address
 
 # # Example usage
-# latitude = 33.667949
-# longitude = 73.052016
+# latitude = 32.81591
+# longitude = 73.86236
 # print(get_address(latitude, longitude))
