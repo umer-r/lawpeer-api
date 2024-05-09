@@ -76,6 +76,7 @@ def update_user(user_id, profile_image=None, email=None,
                 is_active=None, is_suspended=None, status=None, 
                 reason=None, address=None, case_details=None,
                 bar_association_id=None, experience_years=None,
+                longitude=None, latitude=None,
                 **kwargs):
 
     user = User.query.get(user_id)
@@ -124,6 +125,13 @@ def update_user(user_id, profile_image=None, email=None,
             client = Client.query.filter_by(id=user_id).first()
             if client:
                 client.case_details = case_details
+                
+        ## update location related fields:
+        if longitude and latitude:
+            try:
+                user.fill_location_address(latitude, longitude)
+            except Exception as e:
+                print(f"Error occurred while updating location: {e}")
                 
         ## Update Lawyer specific fields:
         if user.role == 'lawyer':

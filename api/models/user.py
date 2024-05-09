@@ -14,6 +14,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 # Module Imports:
 from api.database import db
 from api.utils.helper import to_dict
+from api.utils.geo_locator import get_address
 
 # Models Imports:
 from .review import Review
@@ -46,11 +47,11 @@ class User(db.Model):
     profile_image = db.Column(db.String(255))   # Store image path
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
-    address = db.Column(db.String(150))
+    address = db.Column(db.String(150)) # User added address
     dob = db.Column(db.Date)
-    country = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))
     role = db.Column(db.String(50))  # Role can be 'lawyer' or 'client'
+    
 
     @hybrid_property
     def role_type(self):
@@ -64,6 +65,27 @@ class User(db.Model):
         'polymorphic_identity': 'user',
         'polymorphic_on': role,
     }
+    
+    # Location address:
+    longitude = db.Column(db.Float)
+    latitude = db.Column(db.Float)
+    country = db.Column(db.String(50))
+    city = db.Column(db.String(50))
+    postal_code = db.Column(db.Integer)
+    geo_address = db.Column(db.Text)
+    
+    def fill_location_address(self, lat, long):
+        try:
+            country, city, postal_code, full_address = get_address(lat, long)
+            self.latitude = lat
+            self.longitude = long
+            self.country = country
+            self.city = city
+            self.geo_address = full_address
+            self.postal_code = postal_code
+        except Exception as e:
+            # Log the error or handle it appropriately
+            print(f"Error occurred while fetching address: {e}")
     
     # Additional fields for average rating & total rating
     total_ratings = db.Column(db.Float, default=0)
