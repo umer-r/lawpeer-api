@@ -1,4 +1,5 @@
 # Module Imports
+import stripe
 from stripe import StripeError, checkout
 
 from datetime import datetime
@@ -96,3 +97,38 @@ def create_checkout_session(id, success_url, cancel_url):
     
     except StripeError as e:
         return {'error': str(e)}, Status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+def stripe_payment_intent(contract_id, client_id):
+    
+    contract = Contract.query.get(contract_id)
+    if not contract:
+        return {'error': 'Contract not found'}, Status.HTTP_404_NOT_FOUND
+    
+    if contract.is_paid:
+        return {'error': 'Contract price is already paid'}, Status.HTTP_400_BAD_REQUEST
+
+    # Check if the contract price is valid
+    price = contract.price
+    if not price:
+        return {'error': 'Contract price is missing or invalid'}, Status.HTTP_400_BAD_REQUEST
+    
+    if client_id != contract.client_id:
+        return {'error': 'Unauthorized Access. Client not associated with the contract.'}, Status.HTTP_401_UNAUTHORIZED
+    
+    amount = int(price)
+    try:
+
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(amount * 100),
+            currency="INR",
+            payment_method_types=["card"],
+            metadata={"contract_title": contract.title, "amount": amount, "contract_created": contract.created}
+        )
+
+        client_secret = payment_intent.client_secret
+
+        return {"message": "Payment initiated", "clientSecret": client_secret}, Status.HTTP_200_OK
+    except Exception as e:
+        print(e)
+        return {"message": "Internal Server Error"}, Status.HTTP_500_INTERNAL_SERVER_ERROR

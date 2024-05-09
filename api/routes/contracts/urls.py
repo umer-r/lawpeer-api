@@ -11,11 +11,13 @@
 """
 
 # Lib Imports
+import stripe
+import os
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Module Imports
-from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, end_user_contract, create_checkout_session, delete_contract_by_id
+from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, end_user_contract, create_checkout_session, delete_contract_by_id, stripe_payment_intent
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required, lawyer_required, client_required
@@ -116,3 +118,38 @@ def checkout_session():
 
     response, status_code = create_checkout_session(contract_id, success_url, cancel_url)
     return jsonify(response), status_code
+
+@contract_routes.route("/payment", methods=["POST"])
+@jwt_required()
+@client_required
+@check_mandatory(['contract_id'])
+def pay_contract():
+    data = request.json
+    contract_id = data.get("contract_id")
+    client_id = get_jwt_identity().get('id')
+    response, status_code = stripe_payment_intent(contract_id, client_id)
+    return jsonify(response), status_code     
+
+@contract_routes.route("/stripe", methods=["POST"])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET")
+        )
+    except ValueError as e:
+        # Invalid payload
+        return jsonify({"error": str(e)}), 400
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return jsonify({"error": str(e)}), 400
+
+    # Handle the event
+    if event.type == "payment_intent.created":
+        print(f"{event.data.object.metadata['coin']} payment initiated!")
+    elif event.type == "payment_intent.succeeded":
+        print(f"{event.data.object.metadata['coin']} payment succeeded!")
+
+    return jsonify({"ok": True}), 200
