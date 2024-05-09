@@ -67,7 +67,7 @@ def get_user_by_id(user_id, is_admin, is_same_user):
     """
     
     user = User.query.get(user_id)
-    if is_admin == 'admin' or is_same_user:
+    if is_admin in ['admin', 'super-admin'] or is_same_user:
         return user if user else None
     else:
         if user:
@@ -246,7 +246,7 @@ def exclude_immature_accounts(users):
 
 def get_all_lawyers(is_admin):
     lawyers = User.query.filter_by(role='lawyer').all()
-    if is_admin == 'admin':
+    if is_admin in ['admin', 'super-admin']:
         return lawyers
     else:
         return exclude_immature_accounts(lawyers)
@@ -275,18 +275,18 @@ def filter_lawyer_users(is_admin, city=None, skill_ids=None, above_experience_ye
     
     # Execute the query and fetch filtered lawyers
     filtered_lawyers = query.all()
-    
-    if is_admin == 'admin':
+    if is_admin in ['admin', 'super-admin']:
+        return filtered_lawyers
+    else:
         excluded_users = exclude_immature_accounts(filtered_lawyers)
         return excluded_users
-    else:
-        return filtered_lawyers
 
 # -- Clients Specific -- #
 
 def get_all_clients(is_admin):
     clients = User.query.filter_by(role='client').all()
-    if is_admin == 'admin':
+    if is_admin in ['admin', 'super-admin']:
         return clients
     else:
         return exclude_immature_accounts(clients)
+    

@@ -19,6 +19,7 @@
             18 - Remove JWT from get_user, get_lawyer and get_client                     - [DONE]
             19 - Make auth_controller or access_checker decorator as well                - [DONE]
             20 - Implement forget password functionality.                                - [DONE]
+            21 - Make filter-lawyer handle lawyer names searches                         - []
             
     
     TODO:
@@ -128,7 +129,7 @@ def all_lawyers():
       404:
         description: No lawyer user found.
     """
-    is_admin = get_jwt_identity().get('role', None)
+    is_admin = get_jwt_identity().get('role')
     lawyers = get_all_lawyers(is_admin)
     if lawyers:
         return jsonify([lawyer.to_dict() for lawyer in lawyers]), Status.HTTP_200_OK
@@ -140,7 +141,7 @@ def all_lawyers():
 def filter_lawyers():
     data = request.json
 
-    is_admin = get_jwt_identity.get('role', None)
+    is_admin = get_jwt_identity().get('role')
     city = data.get('city')
     skill_ids = data.get('skill_ids', [])
     above_experience_years = data.get('above_experience_years')
@@ -227,7 +228,7 @@ def all_clients():
         description: No client user found.
     """
     
-    is_admin = get_jwt_identity().get('role', None)
+    is_admin = get_jwt_identity().get('role')
     clients = get_all_clients(is_admin)
     if clients:
         return jsonify([client.to_dict() for client in clients]), Status.HTTP_200_OK
@@ -261,8 +262,8 @@ def get_user(id):
         description: User not found.
     """
     
-    is_admin = get_jwt_identity().get('role', None)
-    current_user = get_jwt_identity().get('id', None)
+    is_admin = get_jwt_identity().get('role')
+    current_user = get_jwt_identity().get('id')
     is_same_user = True if current_user == id else False
     user = get_user_by_id(id, is_admin, is_same_user)
     
