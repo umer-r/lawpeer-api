@@ -339,7 +339,7 @@ def update_existing_user(id):
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
   
-@user_routes.route('/update-profile-image/<int:id>', methods=['PUT'])
+@user_routes.route('/update-profile-image/<int:id>', methods=['POST'])
 @jwt_required()
 @user_or_admin_required
 def update_profile(id):
