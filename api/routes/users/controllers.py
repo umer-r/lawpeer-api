@@ -10,7 +10,7 @@
 
 # Lib Imports:
 from werkzeug.utils import secure_filename
-from sqlalchemy import and_, or_, func
+from sqlalchemy import or_, func
 import os
 
 # Module Imports:
@@ -24,7 +24,7 @@ from api.utils.helper import allowed_file, get_upload_folder, rename_profile_ima
 
 # -- General User Controller -- #
 
-def create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, profile_image=None, role=None, **kwargs):
+def create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, latitude=None, longitude=None, profile_image=None, role=None, **kwargs):
     
     # Check for duplicate email or username.
     if User.query.filter_by(email=email).first() or User.query.filter_by(username=username).first():
@@ -49,6 +49,12 @@ def create_user(email, username, password, first_name, last_name, dob, country, 
             
             # Refactor if gives a bug:
             new_user.profile_image = os.path.join('/static', filename).replace('\\', '/')
+            
+    if longitude and latitude:
+        try:
+            new_user.fill_location_address(latitude, longitude)
+        except Exception as e:
+            print(f"Error occurred while updating location: {e}")
     
     db.session.add(new_user)
     db.session.commit()
