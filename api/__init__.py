@@ -43,6 +43,7 @@ from api.routes.contracts.urls import contract_routes
 from api.routes.complaints.urls import complaint_routes
 from api.routes.reviews.urls import review_routes
 from api.routes.skills.urls import skill_routes
+from api.routes.transactions.urls import transaction_routes
 
 # Initialize admin:
 from api.routes.admin.controllers import create_super_admin
@@ -106,6 +107,7 @@ def create_app():
     app.register_blueprint(review_routes, url_prefix='/api/review')
     app.register_blueprint(complaint_routes, url_prefix='/api/complaint')
     app.register_blueprint(skill_routes, url_prefix='/api/skill')
+    app.register_blueprint(transaction_routes, url_prefix='/api/transaction')
     
     print(app.url_map)
     

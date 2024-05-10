@@ -40,8 +40,12 @@ class Contract(db.Model):
     review_id = db.Column(db.Integer, db.ForeignKey('reviews.id'))
     review = db.relationship('Review', backref='contract', uselist=False)
 
+
     def to_dict(self):
         return to_dict(self)
 
     def __repr__(self):
         return f"<Contract {self.id}>"
+
+# One-to-one relationship with Transaction
+    # transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), nullable=True)

@@ -7,6 +7,7 @@ from stripe import StripeError, checkout
 from datetime import datetime
 from api.database import db
 from api.models.contract import Contract
+from api.models.transaction import Transaction
 from api.utils.status_codes import Status
 
 # ----------------------------------------------- #
@@ -57,6 +58,14 @@ def end_user_contract(contract_id, reason, client_id):
                 contract.ended_on = datetime.now()
                 contract.ended_reason = reason
                 db.session.commit()
+                
+                # Update transaction's pending field to False if transaction exists
+                transaction = Transaction.query.filter_by(contract_id=contract_id).first()
+                if transaction:
+                    transaction.pending = False
+                
+                db.session.commit()
+                
                 return {'message': f'Contract with ID: {contract_id} successfully ended!'}, Status.HTTP_200_OK
         else:
             return {'error': 'Cannot end unpaid contracts'}, Status.HTTP_400_BAD_REQUEST
@@ -151,11 +160,25 @@ def webhook(payload, signature):
     if event.type == "payment_intent.created":
         print(f"{event.data.object.metadata['contract_id']} payment initiated!")
     elif event.type == "payment_intent.succeeded":
-        id = event.data.object.metadata['contract_id']
+        contract_id = event.data.object.metadata['contract_id']
         print(f"contract {id} payment succeeded!")
-        contract = Contract.query.get(id)
-        contract.is_paid = True
-        contract.paid_on = datetime.now()
+        
+        # Store Transaction:
+        transaction = Transaction(
+            description=f"Contract: {contract_id} has been paid by client!",
+            amount=contract.price,
+            pending=True,
+            transaction_mode="credit",
+            contract_id=contract_id
+        )
+        
+        db.session.add(transaction)
         db.session.commit()
 
+        # Update the status of Contract:
+        contract = Contract.query.get(contract_id)
+        contract.is_paid = True
+        contract.paid_on = datetime.now()
+        db.session.commit() 
+        
     return {"ok": True}, Status.HTTP_200_OK
