@@ -159,6 +159,22 @@ def update_user(user_id, profile_image=None, email=None,
 
     return None
 
+def update_profile_picture(id, profile_image):
+    user = User.query.get(id)
+    if user:
+        # Update profile image if provided
+        if profile_image:
+            UPLOAD_FOLDER = get_upload_folder()
+            filename = secure_filename(rename_profile_image(profile_image))
+            if allowed_file(filename):
+                profile_image_path = os.path.join(UPLOAD_FOLDER, filename)
+                profile_image.save(profile_image_path)
+                user.profile_image = os.path.join('/static', filename).replace('\\', '/')
+                
+                db.session.commit()
+                return user
+    return None
+    
 def delete_user(user_id):
     user = User.query.get(user_id)
     if user:

@@ -56,7 +56,7 @@ def rename_profile_image(profile_image):
     """
     
     filename, extension = os.path.splitext(profile_image.filename)
-    current_time = datetime.now().strftime("%Y%m%d%H%M%S")
+    current_time = datetime.now().strftime("Lawpeer_Profile_%Y%m%d%H%M%S")
     new_filename = f"{current_time}{extension}"
     return new_filename
 
