@@ -1,7 +1,10 @@
+from werkzeug.utils import secure_filename
+import os
 # Module Imports:
 from api.models.chat import ChatRoom, Message
 from api.models.user import User
 from api.database import db
+from api.utils.helper import allowed_documents, get_upload_folder, rename_document
 
 def save_message(room_name, message_content, user_id):
     """
@@ -38,3 +41,16 @@ def save_message(room_name, message_content, user_id):
     
 def get_room_messages_by_id(id):
     return Message.query.filter_by(chat_room_id=id).all()
+
+def save_document(file):
+    UPLOAD_FOLDER = get_upload_folder()
+    if file:
+        filename = secure_filename(rename_document(file))
+        if allowed_documents(filename):
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(file_path)
+            
+            # Refactor if gives a bug:
+            url = os.path.join('/static', filename).replace('\\', '/')
+            return url
+    return None

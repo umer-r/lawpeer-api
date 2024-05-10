@@ -12,10 +12,14 @@ from sqlalchemy import inspect
 
 # CONSTS:
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+ALLOWED_DOCS = {'png', 'jpg', 'jpeg', 'pdf', 'docx', 'doc', 'xls', 'xlsx', 'zip'}
 
 # METHODS:
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_documents(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_DOCS
 
 def check_mandatory(keys, data):
     """
@@ -57,6 +61,12 @@ def rename_profile_image(profile_image):
     
     filename, extension = os.path.splitext(profile_image.filename)
     current_time = datetime.now().strftime("Lawpeer_Profile_%Y%m%d%H%M%S")
+    new_filename = f"{current_time}{extension}"
+    return new_filename
+
+def rename_document(file):
+    filename, extension = os.path.splitext(file.filename)
+    current_time = datetime.now().strftime("Lawpeer_Uploaded_Doc_%Y%m%d%H%M%S")
     new_filename = f"{current_time}{extension}"
     return new_filename
 

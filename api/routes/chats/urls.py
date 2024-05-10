@@ -35,7 +35,7 @@ from api.utils.status_codes import Status
 
 # Controller Imports:
 from .room_controllers import create_chat_room, add_users_to_chat_room, check_room, get_all_rooms, get_user_rooms, get_room_by_name, get_room_by_id, delete_room_by_name_or_id
-from .message_controllers import save_message, get_room_messages_by_id
+from .message_controllers import save_message, get_room_messages_by_id, save_document
 
 # Decorators import:
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required
@@ -167,5 +167,15 @@ def room_messages(room_id):
         return jsonify([msg.to_dict() for msg in msgs]), Status.HTTP_200_OK
     
     return jsonify({'message': 'No Chat rooms found'}), Status.HTTP_404_NOT_FOUND
+
+@chat_routes.route('/save-document', methods=['POST'])
+@jwt_required()
+def save_doc():
+    doc = request.files.get('document')
+    document_saved = save_document(doc)
+    if document_saved:
+        return jsonify({'path': document_saved}), Status.HTTP_200_OK
+    
+    return jsonify({'error': 'Server error while saving document'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
 
 ## --  Messages Routes  --  # END #
