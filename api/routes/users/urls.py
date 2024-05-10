@@ -343,8 +343,10 @@ def update_existing_user(id):
 @jwt_required()
 @user_or_admin_required
 def update_profile(id):
-  
     profile_image = request.files.get('profile_image')
+    
+    if not profile_image:
+      return jsonify({'error': 'profile_image is required'}), Status.HTTP_400_BAD_REQUEST
     
     updated_user = update_profile_picture(id, profile_image=profile_image)
     if updated_user:
