@@ -10,7 +10,7 @@ def create_new_complaint(subject, description, contract_id, client_id, lawyer_id
     # Check if the contract exists
     contract = Contract.query.get(contract_id)
     if contract:
-        if contract.is_ended:
+        if contract.is_paid:
             complaint = Complaint(subject=subject, description=description, contract_id=contract_id, client_id=client_id, lawyer_id=lawyer_id, status='In Process')
             db.session.add(complaint)
             db.session.commit()

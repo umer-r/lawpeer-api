@@ -32,15 +32,15 @@ def create_complaint():
         
         check_contract = get_complaint_by_contract(contract_id)
         if check_contract:
-            return jsonify({'message': 'Complaint for this contract already exists!'}), Status.HTTP_409_CONFLICT
+            return jsonify({'error': 'Complaint for this contract already exists!'}), Status.HTTP_409_CONFLICT
         
         complaint = create_new_complaint(subject, description, contract_id, client_id, lawyer_id)
         if complaint:
             return jsonify({'message': 'Complaint created successfully'}), Status.HTTP_201_CREATED
         else:
-            return jsonify({'message': 'Contract does not exist or is not ended'}), Status.HTTP_400_BAD_REQUEST
+            return jsonify({'error': 'Contract does not exist or is not paid!'}), Status.HTTP_400_BAD_REQUEST
     else:
-        return jsonify({'message': 'Unauthorized Access. User not associated with contract'}), Status.HTTP_401_UNAUTHORIZED
+        return jsonify({'error': 'Unauthorized Access. User not associated with contract'}), Status.HTTP_401_UNAUTHORIZED
 
 @complaint_routes.route('/', methods=['GET'])
 @jwt_required()
