@@ -1,7 +1,7 @@
 from geopy.geocoders import Nominatim
 
 # Initialize geolocator
-geolocator = Nominatim(user_agent="geo_locator")
+geolocator = Nominatim(user_agent="geo_locator", scheme='http')
 
 # Function to get address from latitude and longitude
 def get_address(latitude, longitude):
