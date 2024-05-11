@@ -65,7 +65,7 @@ def lawyer_skills_by_id(id):
 def lawyer_skills():
     id = get_jwt_identity().get('id')
     
-    lawyer_skills, lawyer_found = get_lawyer_skills(id)
+    lawyer_found, lawyer_skills = get_lawyer_skills(id)
     if lawyer_found:
         if lawyer_skills:
             return jsonify(lawyer_skills), Status.HTTP_200_OK
