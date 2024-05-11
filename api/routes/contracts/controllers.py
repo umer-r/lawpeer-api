@@ -161,6 +161,7 @@ def webhook(payload, signature):
         print(f"{event.data.object.metadata['contract_id']} payment initiated!")
     elif event.type == "payment_intent.succeeded":
         contract_id = event.data.object.metadata['contract_id']
+        contract = Contract.query.get(contract_id)
         print(f"contract {id} payment succeeded!")
         
         # Store Transaction:
@@ -176,7 +177,6 @@ def webhook(payload, signature):
         db.session.commit()
 
         # Update the status of Contract:
-        contract = Contract.query.get(contract_id)
         contract.is_paid = True
         contract.paid_on = datetime.now()
         db.session.commit() 
