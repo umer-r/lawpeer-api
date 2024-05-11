@@ -1,5 +1,17 @@
 """
-    FIXME: needs to be reworked to handle request.form and request.get_json()       - [DONE]
+    This file contains decorators for checking mandatory keys and presence of at least one 
+    key in request data, and handling different request data formats.
+    
+    External Libraries:
+        - functools: Provides tools for working with functions and other callable objects.
+        - flask: A micro web framework for Python.
+
+    Function Names:
+        - check_mandatory
+        - check_at_least_one_key
+        
+    FIXME: 
+        1 - needs to be reworked to handle request.form and request.get_json()       - [DONE]
 """
 
 # Lib Imports:
@@ -64,4 +76,3 @@ def check_at_least_one_key(keys):
             return func(*args, **kwargs)
         return wrapper
     return decorator
-
