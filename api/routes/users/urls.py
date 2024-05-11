@@ -341,6 +341,20 @@ def update_existing_user(id):
         return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+
+@user_routes.route('/my-account', methods=['PUT'])
+@jwt_required()
+def update_my_account():
+    
+    id = get_jwt_identity().get('id')
+    data = request.form
+    profile_image = request.files.get('profile_image')
+    
+    updated_user = update_user(id, profile_image=profile_image, **data)
+    if updated_user:
+        return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
   
 @user_routes.route('/update-profile-image/<int:id>', methods=['POST'])
 @jwt_required()
