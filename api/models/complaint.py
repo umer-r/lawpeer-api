@@ -13,6 +13,7 @@ class Complaint(db.Model):
     updated = db.Column(db.DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
     
     # Description:
+    creator_id = db.Column(db.Integer)
     subject = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     

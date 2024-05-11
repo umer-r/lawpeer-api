@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # Controllers Imports:
-from .controllers import create_new_complaint, get_all_complaints, get_complaint_by_id, get_user_complaints, update_complaint_status, check_client_association_with_contract, get_complaint_by_contract
+from .controllers import create_new_complaint, get_all_complaints, get_complaint_by_id, get_user_complaints, update_complaint_status, check_creator_complaints, check_users_association_with_contract
 
 # Decorators Imports:
 from api.decorators.mandatory_keys import check_mandatory
@@ -16,25 +16,25 @@ complaint_routes = Blueprint('complaint_routes', __name__)
 
 @complaint_routes.route('/', methods=['POST'])
 @jwt_required()
-@check_mandatory(['subject', 'description', 'contract_id', 'lawyer_id'])
-@client_required
+@check_mandatory(['subject', 'description', 'contract_id', 'lawyer_id', 'client_id'])
 def create_complaint():
     data = request.get_json()
     
     subject = data.get('subject')
     description = data.get('description')
-    contract_id = data.get('contract_id')
-    client_id = get_jwt_identity().get('id')
+    creator_id = get_jwt_identity().get('id')
+    client_id = data.get('client_id')
     lawyer_id = data.get('lawyer_id')
+    contract_id = data.get('contract_id')
     
-    check_client = check_client_association_with_contract(client_id, contract_id)
+    check_client = check_users_association_with_contract(client_id, lawyer_id, contract_id)
     if check_client:
         
-        check_contract = get_complaint_by_contract(contract_id)
+        check_contract = check_creator_complaints(contract_id, creator_id)
         if check_contract:
-            return jsonify({'error': 'Complaint for this contract already exists!'}), Status.HTTP_409_CONFLICT
+            return jsonify({'error': 'User have already added complaint for this contract!'}), Status.HTTP_409_CONFLICT
         
-        complaint = create_new_complaint(subject, description, contract_id, client_id, lawyer_id)
+        complaint = create_new_complaint(subject, description, contract_id, client_id, lawyer_id, creator_id)
         if complaint:
             return jsonify({'message': 'Complaint created successfully'}), Status.HTTP_201_CREATED
         else:
