@@ -1,8 +1,23 @@
 """
-    Helper module
+    Util file; Contains helper functions utilized accross api.
+
+    External Libraries:
+        - flask: A micro web framework for Python.
+        - datetime: A module in Python that supplies classes for manipulating dates and times.
+        - os: A module in Python that provides functions for interacting with the operating system.
+        - sqlalchemy: A SQL toolkit and Object-Relational Mapping (ORM) for Python.
+
+    Function Names:
+        - allowed_file
+        - allowed_documents
+        - get_upload_folder
+        - omit_user_sensitive_fields
+        - rename_profile_image
+        - rename_document
+        - to_dict
 """
 
-# Lib Imports
+# Lib Imports:
 from flask import current_app
 from datetime import datetime
 import os
@@ -10,27 +25,46 @@ from sqlalchemy import inspect
 
 # ----------------------------------------------- #
 
-# CONSTS:
+## --- CONTS --- ##
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 ALLOWED_DOCS = {'png', 'jpg', 'jpeg', 'pdf', 'docx', 'doc', 'xls', 'xlsx', 'zip'}
 
-# METHODS:
+## --- METHODS --- ##
+
 def allowed_file(filename):
+    """
+    Checks if the file extension is allowed for upload.
+
+    Parameters:
+        - filename (str): The name of the file to be checked.
+
+    Returns:
+        - bool: True if the file extension is allowed, False otherwise.
+    """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def allowed_documents(filename):
+    """
+    Checks if the document extension is allowed for upload.
+
+    Parameters:
+        - filename (str): The name of the document file to be checked.
+
+    Returns:
+        - bool: True if the document extension is allowed, False otherwise.
+    """
+    
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_DOCS
 
-def check_mandatory(keys, data):
-    """
-        OBSELETE: Moved to decorator
-    """
-    missing_keys = [key for key in keys if key not in data]
-    if missing_keys:
-        return True, missing_keys
-    return False, []
-
 def get_upload_folder():
+    """
+    Get the upload folder path.
+
+    Returns:
+        - str: The path to the upload folder.
+    """
+    
     with current_app.app_context():
         return os.path.join(current_app.root_path, 'assets/uploaded')
     
@@ -65,6 +99,16 @@ def rename_profile_image(profile_image):
     return new_filename
 
 def rename_document(file):
+    """
+    Rename a document file with a timestamp prefix.
+
+    Parameters:
+        - file (FileStorage): The file to be renamed.
+
+    Returns:
+        - str: The new filename with a timestamp prefix.
+    """
+    
     filename, extension = os.path.splitext(file.filename)
     current_time = datetime.now().strftime("Lawpeer_Uploaded_Doc_%Y%m%d%H%M%S")
     new_filename = f"{current_time}{extension}"
@@ -83,4 +127,5 @@ def to_dict(instance):
         Reference:
             How to serialize SqlAlchemy PostgreSQL Query to JSON => https://stackoverflow.com/a/46180522
     """
+    
     return {c.key: getattr(instance, c.key) for c in inspect(instance).mapper.column_attrs}

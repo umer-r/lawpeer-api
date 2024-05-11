@@ -1,5 +1,16 @@
+"""
+    Util file; Contains class that defines common HTTP status codes as class attributes.
+
+    Class Names:
+        - Status
+"""
+
+# ----------------------------------------------- #
+
 class Status:
-    """ Defines common HTTP status codes """
+    """ 
+    Defines common HTTP status codes
+    """
     
     HTTP_200_OK = 200
     HTTP_201_CREATED = 201

@@ -1,3 +1,15 @@
+"""
+    Util file; contains functions for generating access tokens for admins and users 
+    based on their email and password.
+
+    External Libraries:
+        - flask_jwt_extended: An extension for Flask that adds JWT support to your application.
+
+    Function Names:
+        - generate_admin_access_token
+        - generate_user_access_token
+"""
+
 # Lib Imports:
 from flask_jwt_extended import create_access_token
 
@@ -5,6 +17,8 @@ from flask_jwt_extended import create_access_token
 from api.models.admin import Admin
 from api.models.user import User
 from api.utils.hasher import verify_password
+
+# ----------------------------------------------- #
 
 def generate_admin_access_token(email, password):
     """
