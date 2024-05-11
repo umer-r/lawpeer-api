@@ -47,7 +47,7 @@ from api.utils.helper import omit_user_sensitive_fields
 from api.utils.token_generator import generate_user_access_token
 
 # Controllers Imports:
-from .controllers import create_user, get_all_users, update_user, update_profile_picture, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password, reset_password, verify_user_account, filter_lawyer_users
+from .controllers import create_user, get_all_users, update_user, update_profile_picture, delete_user, get_user_by_id, get_all_lawyers, get_all_clients, self_activate_user_account, self_deactivate_user_account, change_password, reset_password, verify_user_account, filter_lawyer_users, get_user_account_by_jwt
 
 # Decorators Imports:
 from api.decorators.mandatory_keys import check_mandatory, check_at_least_one_key
@@ -276,6 +276,18 @@ def get_user(id):
     
     return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
+@user_routes.route('/my-account', methods=['GET'])
+@jwt_required()
+def get_my_account():
+  
+    current_user = get_jwt_identity().get('id')
+    user = get_user_account_by_jwt(current_user)
+    
+    if user:
+      return jsonify(user.to_dict()), Status.HTTP_200_OK
+    
+    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+
 @user_routes.route('/', methods=['GET'])
 @jwt_required()
 @swag_from(methods=['GET'])
@@ -333,20 +345,6 @@ def update_existing_user(id):
         description: User not found.
     """
 
-    data = request.form
-    profile_image = request.files.get('profile_image')
-    
-    updated_user = update_user(id, profile_image=profile_image, **data)
-    if updated_user:
-        return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
-    
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
-
-@user_routes.route('/my-account', methods=['PUT'])
-@jwt_required()
-def update_my_account():
-    
-    id = get_jwt_identity().get('id')
     data = request.form
     profile_image = request.files.get('profile_image')
     

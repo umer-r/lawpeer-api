@@ -82,6 +82,9 @@ def get_user_by_id(user_id, is_admin, is_same_user):
         else:
             return None
 
+def get_user_account_by_jwt(id):
+    return User.query.get(id)
+
 def get_all_users():
     return User.query.all()
 
