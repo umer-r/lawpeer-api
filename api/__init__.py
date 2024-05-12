@@ -109,7 +109,7 @@ def create_app():
     app.register_blueprint(skill_routes, url_prefix='/api/skill')
     app.register_blueprint(transaction_routes, url_prefix='/api/transaction')
     
-    print(app.url_map)
+    # print(app.url_map)
     
     return app
 
