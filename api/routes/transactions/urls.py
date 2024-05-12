@@ -10,6 +10,8 @@
         - user_transactions_by_id:          Retrieve transactions of a user by ID.
         - user_transactions: (JWT)          Retrieve transactions of the logged-in user.
         - create_debit_transaction: (JWT)   Create a debit transaction, MANDATORY: description, amount, contract_id.
+        
+    TODO:   1 - Move logic to controllers.                      - []
 """
 
 # Lib Imports:
@@ -82,21 +84,10 @@ def user_transactions():
 def create_debit_transaction():
     data = request.json
     
-    # Extract required data for the debit transaction
     description = data.get('description')
     amount = data.get('amount')
     contract_id = data.get('contract_id')
     
-    # Create a new debit transaction
-    transaction = Transaction(
-        description=description,
-        amount=amount,
-        pending=False,
-        transaction_mode='debit',
-        contract_id=contract_id
-    )
-    
-    db.session.add(transaction)
-    db.session.commit()
+    create_debit_transaction(description, amount, contract_id)
     
     return jsonify({'message': 'Debit transaction created successfully'}), Status.HTTP_201_CREATED
