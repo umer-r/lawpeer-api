@@ -95,6 +95,16 @@ def user_rooms(id):
     
     return jsonify({'message': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
 
+@chat_routes.route('/chat-rooms/my-rooms', methods=['GET'])
+@jwt_required()
+def my_rooms():
+    id = get_jwt_identity().get('id')
+    rooms = get_user_rooms(id)
+    if rooms:
+        return jsonify([room.to_dict() for room in rooms]), Status.HTTP_200_OK
+    
+    return jsonify({'message': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
+
 ## --  ChatRoom Routes  --  # END #
 
 ## --  SOCKET.io Events  --  ##

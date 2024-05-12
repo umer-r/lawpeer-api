@@ -40,11 +40,11 @@ class ChatRoom(db.Model):
     name = db.Column(db.String(100), nullable=False)
     creator_id = db.Column(db.Integer, nullable=False)
     user_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])  # Initialize as an empty list
+    user_names = db.Column(ARRAY(db.String(80)), nullable=False, default=[])
 
     last_message = db.Column(db.Text)
     last_message_sender_name = db.Column(db.Text)
     messages = db.relationship('Message', backref='chat_room', lazy=True)
-    # users = db.relationship('User', secondary=user_chat_rooms, backref=db.backref('chat_rooms', lazy='dynamic'))
     
     def to_dict(self):
         return to_dict(self)

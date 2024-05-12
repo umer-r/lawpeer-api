@@ -75,6 +75,16 @@ def create_chat_room(name, creator_id, user_ids):
             new_user_ids = [user_id for user_id in user_ids if user_id not in existing_user_ids]
             chat_room.user_ids = existing_user_ids + new_user_ids
     
+    # Iterate through new_user_ids to avoid duplicate names
+    for id in chat_room.user_ids:
+        user = User.query.get(id)
+        if user:
+            # Combine first_name and last_name with a space
+            user_name = f"{user.first_name} {user.last_name}"
+            existing_user_names = chat_room.user_names or []
+            existing_user_names.append(user_name)
+            chat_room.user_names = existing_user_names  # Add the combined name to the list
+    
     # Commit the chat room creation
     try:
         db.session.add(chat_room)
