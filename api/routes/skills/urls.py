@@ -1,21 +1,38 @@
 """
+    Blueprint (urls) File; manages routes related to skills.
+
+    External Libraries:
+        - flask
+        - flask_jwt_extended
+
+    Function Names:
+        - all_skills:               Retrieve all skills.
+        - skill_to_lawyer: (JWT)    Add skills to a lawyer, MANDATORY: skill_ids.
+        - get_lawyers_by_skill:     Retrieve lawyers by skill ID.
+        - lawyer_skills_by_id:      Retrieve skills of a lawyer by ID.
+        - lawyer_skills: (JWT)      Retrieve skills of the logged-in lawyer.
+        - skills_of_lawyers:        Retrieve skills of all lawyers.
+
     TODO:   1 - Create a endpoint to filter by multiple skill ids                       - [HALT]
             2 - Update the add-skills to handle updation of skills                      - [DONE]
             3 - Find a way to send response from endpoint not from controller           - []
-            
+            4 - Implement Access control.
 """
 
+# Lib Imports:
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+# Decorators Imports:
 from api.decorators.mandatory_keys import check_mandatory
-from api.decorators.access_control_decorators import lawyer_required, admin_required
-from api.utils.status_codes import Status
-from api.database import db
-from api.models.user import Lawyer
-from api.models.skill import Skill
 
+# Module Imports:
+from api.utils.status_codes import Status
+
+# Controllers Imports:
 from .controllers import get_all_skills, add_skills_to_lawyer, filter_lawyer_by_skill, get_lawyer_skills, get_skills_of_all_lawyers
+
+# ----------------------------------------------- #
 
 skill_routes = Blueprint('skill', __name__)
 
@@ -85,4 +102,3 @@ def skills_of_lawyers():
             return jsonify({'error': 'Lawyers have no selected skills'}), Status.HTTP_404_NOT_FOUND
     else:
         return jsonify({'error': 'No lawyers found'}), Status.HTTP_404_NOT_FOUND
-

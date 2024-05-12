@@ -1,22 +1,36 @@
 """
-    DESC:
-        Blueprint for Contract related routes.
-    
+    Blueprint (urls) File; Contains routes related to contracts management.
+
+    External Libraries:
+        - flask
+        - flask_jwt_extended
+        - stripe
+
+    Function Names:
+        - create_new_contract: (JWT)    Create a new contract, AC: lawyer_required, MANDATORY: title, description, client_id, price.
+        - all_contracts: (JWT)          Get all contracts from the database, AC: admin_required.
+        - get_contract: (JWT)           Get single contract by ID.
+        - get_user_contracts: (JWT)     Get all contracts of the current user.
+        - delete_contract: (JWT)        Delete contract by ID.
+        - get_user_contracts_id:        Get all contracts of a user by ID, AC: user_or_admin_required.
+        - end_contract: (JWT)           End contract by ID, AC: client_required, MANDATORY: ended_reason.
+        - checkout_session:             Create a checkout session for payment, MANDATORY: contract_id, success_url, cancel_url.
+        - pay_contract: (JWT)           Initiate payment for a contract, AC: client_required, MANDATORY: contract_id.
+        - stripe_webhook:               Handle Stripe webhook events.
+
     TODO:   1 - Implement Withdraw system for contracts                             - [HALT] -> Moved to deletion
             2 - GET for all contracts of client from jwt                            - [DONE]
             3 - Cascade review_id if contract deleted?                              - []
             4 - Remove accept-contract functionality                                - [DONE]
-            5 - Implement access control                                            - []
-            6 - Implement deletion of contracts                                     - []
+            5 - Implement access control                                            - [DONE]
+            6 - Implement deletion of contracts                                     - [DONE]
 """
 
-# Lib Imports
-import stripe
-import os
+# Lib Imports:
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-# Module Imports
+# Module Imports:
 from .controllers import create_contract, get_all_contracts, get_all_contract_by_id, get_all_user_contracts, end_user_contract, create_checkout_session, delete_contract_by_id, stripe_payment_intent, webhook
 from api.utils.status_codes import Status
 from api.decorators.mandatory_keys import check_mandatory
@@ -41,7 +55,7 @@ def create_new_contract():
     
     new_contract = create_contract(title, description, lawyer_id, client_id, price)
     if new_contract is None:
-        return jsonify({'message': 'Error while creating contract'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
+        return jsonify({'error': 'Error while creating contract'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
     
     return jsonify(new_contract.to_dict()), Status.HTTP_200_OK
 
@@ -54,7 +68,7 @@ def all_contracts():
     if contracts:
         return jsonify([contract.to_dict() for contract in contracts]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No contract found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No contract found'}), Status.HTTP_404_NOT_FOUND
 
 @contract_routes.route('/<int:id>', methods=['GET'])
 @jwt_required()
@@ -64,7 +78,7 @@ def get_contract(id):
     if contract:
         return jsonify(contract.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'Contract not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'Contract not found'}), Status.HTTP_404_NOT_FOUND
 
 @contract_routes.route('/my-contracts', methods=['GET'])
 @jwt_required()
@@ -75,7 +89,7 @@ def get_user_contracts():
     if contracts:
         return jsonify([contract.to_dict() for contract in contracts]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No contracts found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No contracts found'}), Status.HTTP_404_NOT_FOUND
 
 @contract_routes.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -93,7 +107,7 @@ def get_user_contracts_id(id):
     if contracts:
         return jsonify([contract.to_dict() for contract in contracts]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No contracts found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No contracts found'}), Status.HTTP_404_NOT_FOUND
 
 @contract_routes.route('/end-contract/<int:id>', methods=['POST'])
 @jwt_required()

@@ -1,4 +1,18 @@
 """
+    Blueprint (urls) File; Contains routes related to reviews management.
+
+    External Libraries:
+        - flask
+        - flask_jwt_extended
+
+    Function Names:
+        - create_review: (JWT)     Create a new review, AC: client_required, MANDATORY: contract_id, rating, review_text, lawyer_id.
+        - get_all:                 Retrieve all reviews.
+        - get_review:              Retrieve a specific review by its ID.
+        - get_all_client:          Retrieve all reviews of a specific client by ID.
+        - get_all_lawyer:          Retrieve all reviews of a specific lawyer by ID.
+        - delete_review: (JWT)     Delete review by ID.
+
     TODO:   1 - Implement JWT access control                                                - [DONE]
             2 - Implement average rating for get_all_lawyer route via controller            - [DONE] -> In User Model.
             3 - create_review:
@@ -51,7 +65,7 @@ def get_all():
     if reviews:
         return jsonify([review.to_dict() for review in reviews]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No reviews found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No reviews found'}), Status.HTTP_404_NOT_FOUND
 
 # READ-2: Retrieve a specific review by its ID
 @review_routes.route('/<int:review_id>', methods=['GET'])
@@ -61,7 +75,7 @@ def get_review(review_id):
     if review:
         return jsonify(review.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'Review not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'Review not found'}), Status.HTTP_404_NOT_FOUND
 
 # READ-3: Client specific Reviews
 @review_routes.route('/client/<int:id>', methods=['GET'])
@@ -70,7 +84,7 @@ def get_all_client(id):
     if reviews:
         return jsonify([review.to_dict() for review in reviews]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
 
 # READ-4: Lawyer specific Reviews
 @review_routes.route('/lawyer/<int:id>', methods=['GET'])
@@ -79,7 +93,7 @@ def get_all_lawyer(id):
     if reviews:
         return jsonify([review.to_dict() for review in reviews]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No reviews found!'}), Status.HTTP_404_NOT_FOUND
 
 # DELETE: delete review by id
 @review_routes.route('/<int:review_id>', methods=['DELETE'])
@@ -90,4 +104,4 @@ def delete_review(review_id):
     if deleted_review:
         return jsonify({'message': f'Review with id {id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     
-    return jsonify({'message': 'Review not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'Review not found'}), Status.HTTP_404_NOT_FOUND

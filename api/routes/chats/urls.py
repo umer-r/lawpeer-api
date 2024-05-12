@@ -1,4 +1,25 @@
 """
+    Blueprint (urls) File; Manages routes related to ChatRoom & Messages.
+    
+    External Libraries:
+        - flask
+        - flask_jwt_extended
+        - flask_socketio
+
+    Function Names:
+        - create_new_chat_room: (JWT)     Create a new chat room.
+        - get_all: (JWT)                  Retrieve all chat rooms.
+        - room_by_id: (JWT)               Retrieve a chat room by its ID.
+        - room_by_name: (JWT)             Retrieve a chat room by its name.
+        - user_rooms: (JWT)               Retrieve chat rooms of a user.
+        - my_rooms: (JWT)                 Retrieve chat rooms of the logged-in user.
+        - handle_join_room: (JWT)         Handle joining a chat room through WebSocket.
+        - handle_send_message: (JWT)      Handle sending a message in a chat room through WebSocket.
+        - handle_leave_room:              Handle leaving a chat room through WebSocket.
+        - add_user: (JWT)                 Add a user to a chat room.
+        - room_messages: (JWT)            Retrieve messages of a chat room.
+        - save_doc: (JWT)                 Save a document.
+        
     TODO:
             1 - Merge create_new_chat_room() and add_user().                    - [DONE]
             2 - Complete send_message                                           - [DONE] -- Test it now somehow.
@@ -6,9 +27,10 @@
             4 - Split check_room_exists and check_user_in_room (or modify)      - []
             5 - Implement adding user to chat room after creation               - []
             6 - Implement Access control.                                       - [DONE]
-            8 - Implement ONLY Admin can create chat rooms for other people.
+            7 - Implement ONLY Admin can create chat rooms for other people.
                 User can not create chat rooms for other people.
-            7 - Add Routes for:
+            8 - Globalize the save document route for profile and other stuff.
+            9 - Add Routes for:
             
                 * ChatRoom:
                 - Create Chat room.                                             - [DONE]
@@ -39,13 +61,17 @@ from .message_controllers import save_message, get_room_messages_by_id, save_doc
 
 # Decorators import:
 from api.decorators.access_control_decorators import admin_required, user_or_admin_required
+from api.decorators.mandatory_keys import check_mandatory
 
-chat_routes = Blueprint('chat', __name__)  # Define the chat routes Blueprint
+# ----------------------------------------------- #
+
+chat_routes = Blueprint('chat', __name__) 
 
 ## --  ChatRoom Routes  --  ##
 
 @chat_routes.route('/chat-rooms', methods=['POST'])
 @jwt_required()
+@check_mandatory(['name', 'user_ids'])
 def create_new_chat_room():
     data = request.get_json()
     name = data.get('name')
@@ -55,7 +81,7 @@ def create_new_chat_room():
     if chat_room is not None:
         return jsonify(chat_room.to_dict()), Status.HTTP_201_CREATED
     else:
-        return jsonify({'message': 'Chat room with the same name already exists'}), Status.HTTP_409_CONFLICT
+        return jsonify({'error': 'Chat room with the same name already exists'}), Status.HTTP_409_CONFLICT
     
 @chat_routes.route('/chat-rooms', methods=['GET'])
 @jwt_required()
@@ -65,7 +91,7 @@ def get_all():
     if rooms:
         return jsonify([room.to_dict() for room in rooms]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No Chat rooms found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No Chat rooms found'}), Status.HTTP_404_NOT_FOUND
 
 @chat_routes.route('/chat-rooms/<int:room_id>', methods=['GET'])
 @jwt_required()
@@ -74,7 +100,7 @@ def room_by_id(room_id):
     if room:
         return jsonify(room.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': f'No Chat room: {room_id} found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': f'No Chat room: {room_id} found'}), Status.HTTP_404_NOT_FOUND
 
 @chat_routes.route('/chat-rooms/<path:name>', methods=['GET'])
 @jwt_required()
@@ -83,7 +109,7 @@ def room_by_name(name):
     if room:
         return jsonify(room.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': f'No Chat room: {name} found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': f'No Chat room: {name} found'}), Status.HTTP_404_NOT_FOUND
 
 @chat_routes.route('/chat-rooms/user/<int:id>', methods=['GET'])
 @jwt_required()
@@ -93,7 +119,7 @@ def user_rooms(id):
     if rooms:
         return jsonify([room.to_dict() for room in rooms]), Status.HTTP_200_OK
     
-    return jsonify({'message': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
 
 @chat_routes.route('/chat-rooms/my-rooms', methods=['GET'])
 @jwt_required()
@@ -103,7 +129,7 @@ def my_rooms():
     if rooms:
         return jsonify([room.to_dict() for room in rooms]), Status.HTTP_200_OK
     
-    return jsonify({'message': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': f'No Chat rooms found for user: {id}'}), Status.HTTP_404_NOT_FOUND
 
 ## --  ChatRoom Routes  --  # END #
 
@@ -165,7 +191,7 @@ def add_user(chat_room_id):
     if chat_room:
         return jsonify(chat_room.to_dict()), Status.HTTP_200_OK
     else:
-        return jsonify({'message': 'Failed to add user to chat room'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
+        return jsonify({'error': 'Failed to add user to chat room'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
     
 ## --  Messages Routes  --  ##
 
@@ -176,7 +202,7 @@ def room_messages(room_id):
     if msgs:
         return jsonify([msg.to_dict() for msg in msgs]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No Chat rooms found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No Chat rooms found'}), Status.HTTP_404_NOT_FOUND
 
 @chat_routes.route('/save-document', methods=['POST'])
 @jwt_required()

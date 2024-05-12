@@ -1,12 +1,33 @@
+"""
+    Blueprint (urls) File; Manages routes related to transactions.
+
+    External Libraries:
+        - flask
+        - flask_jwt_extended
+        - sqlalchemy
+
+    Function Names:
+        - user_transactions_by_id:          Retrieve transactions of a user by ID.
+        - user_transactions: (JWT)          Retrieve transactions of the logged-in user.
+        - create_debit_transaction: (JWT)   Create a debit transaction, MANDATORY: description, amount, contract_id.
+"""
+
+# Lib Imports:
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from api.models.transaction import Transaction
 from api.models.contract import Contract
 from api.database import db
 from sqlalchemy import inspect
+# Module Imports:
 from api.utils.status_codes import Status
+
+# Decorators Imports:
 from api.decorators.mandatory_keys import check_mandatory
 from api.decorators.access_control_decorators import admin_required
+
+# ----------------------------------------------- #
 
 transaction_routes = Blueprint('transaction_routes', __name__)
 
