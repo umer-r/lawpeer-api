@@ -1,4 +1,35 @@
 """
+  Blueprint (urls) file; API Routes for User Management.
+
+  Libraries:
+    - flask: Micro web framework for Python.
+    - flask_jwt_extended: JSON Web Tokens extension for Flask.
+    - flask_mail: Extension for email sending in Flask.
+    - flasgger: Extension for Swagger API documentation.
+
+  Functions:
+    - create_new_lawyer:       Creates a new lawyer. AC: admin_required, MANDATORY: email, username, password, first_name, last_name, address.
+    - all_lawyers:             Retrieves all lawyers. AC: admin_required.
+    - filter_lawyers:          Filters lawyers based on criteria. AC: admin_required.
+    - create_new_client:       Creates a new client. AC: admin_required, MANDATORY: email, username, password, first_name, last_name, address.
+    - all_clients:             Retrieves all clients. AC: admin_required.
+    - get_user:                Retrieves user details by ID. AC: user_or_admin_required.
+    - get_my_account:          Retrieves current user's account details. AC: user_or_admin_required.
+    - get_all:                 Retrieves all users. AC: admin_required.
+    - update_existing_user:    Updates existing user by ID. AC: user_or_admin_required.
+    - update_profile:          Updates user's profile picture by ID. AC: user_or_admin_required, MANDATORY: profile_image.
+    - delete_existing_user:    Deletes existing user by ID. AC: admin_required.
+    - deactivate_account:      Deactivates user account by ID. AC: user_or_admin_required, MANDATORY: reason.
+    - activate_account:        Activates user account by ID. AC: user_or_admin_required.
+    - suspend_account:         Suspends user account by ID. AC: admin_required, MANDATORY: status.
+    - unsuspend_account:       Unsuspends user account by ID. AC: admin_required, MANDATORY: status.
+    - change_user_password:    Changes user password by ID. AC: user_or_admin_required, MANDATORY: old_password, new_password.
+    - login:                   Authenticates user and generates access token. MANDATORY: email, password.
+    - forgot_pass:             Generates OTP for forget password. MANDATORY: email.
+    - password_reset:          Resets admin password. MANDATORY: email, new_password, otp.
+    - verify_email_otp:        Sends OTP for email verification. AC: user_or_admin_required, MANDATORY: email.
+    - email_verification:      Verifies user account using OTP. AC: user_or_admin_required, MANDATORY: email, otp.
+
     FIXME:  1  - Add missing keys error in routes.                                       - [DONE]
             2  - Add account deactivation/activation route.                              - [DONE]
             3  - Add account suspension & STATUS route.                                  - [DONE]
@@ -21,7 +52,6 @@
             20 - Implement forget password functionality.                                - [DONE]
             21 - Make filter-lawyer handle lawyer names searches                         - []
             
-    
     TODO:
         Refactor:
             1 - Make code more reusable.
@@ -38,7 +68,6 @@ from flasgger import swag_from
 
 # Extentions Imports:
 from api.extentions.mail import mail
-# from api.__init__ import mail
 
 # Utils Imports:
 from api.utils.otp_generator import save_otp, verify_otp, generate_otp, delete_all_otps
@@ -110,7 +139,7 @@ def create_new_lawyer():
 
     new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, latitude, longitude, profile_image, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
     if new_lawyer is None:
-        return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
+        return jsonify({'error': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
     returned_lawyer = omit_user_sensitive_fields(new_lawyer)
     return jsonify(returned_lawyer), Status.HTTP_200_OK
@@ -136,7 +165,7 @@ def all_lawyers():
     lawyers = get_all_lawyers(is_admin)
     if lawyers:
         return jsonify([lawyer.to_dict() for lawyer in lawyers]), Status.HTTP_200_OK
-    return jsonify({'message': 'No lawyer user found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No lawyer user found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/lawyer/filter-lawyers', methods=['POST'])
 @jwt_required()
@@ -154,7 +183,7 @@ def filter_lawyers():
     if lawyers:
       return jsonify([lawyer.to_dict() for lawyer in lawyers]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No Lawyer user found matching the filters'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No Lawyer user found matching the filters'}), Status.HTTP_404_NOT_FOUND
 
 # -- Client Specific -- #
 
@@ -205,7 +234,7 @@ def create_new_client():
 
     new_client = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, profile_image, role='client', case_details=case_details)
     if new_client is None:
-        return jsonify({'message': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
+        return jsonify({'error': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
     # Remove sensitive fields
     returned_client = omit_user_sensitive_fields(new_client)
@@ -235,7 +264,7 @@ def all_clients():
     clients = get_all_clients(is_admin)
     if clients:
         return jsonify([client.to_dict() for client in clients]), Status.HTTP_200_OK
-    return jsonify({'message': 'No client user found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No client user found'}), Status.HTTP_404_NOT_FOUND
 
 # -- General User Routes -- #
 
@@ -274,7 +303,7 @@ def get_user(id):
       returned_user = omit_user_sensitive_fields(user)
       return jsonify(returned_user), Status.HTTP_200_OK
     
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/my-account', methods=['GET'])
 @jwt_required()
@@ -286,7 +315,7 @@ def get_my_account():
     if user:
       return jsonify(user.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/', methods=['GET'])
 @jwt_required()
@@ -314,7 +343,7 @@ def get_all():
     if users:
         return jsonify([user.to_dict() for user in users]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No user found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No user found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/<int:id>', methods=['PUT'])
 @jwt_required()
@@ -352,22 +381,20 @@ def update_existing_user(id):
     if updated_user:
         return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
   
 @user_routes.route('/update-profile-image/<int:id>', methods=['POST'])
 @jwt_required()
 @user_or_admin_required
+@check_mandatory(['profile_image'])
 def update_profile(id):
     profile_image = request.files.get('profile_image')
-    
-    if not profile_image:
-      return jsonify({'error': 'profile_image is required'}), Status.HTTP_400_BAD_REQUEST
     
     updated_user = update_profile_picture(id, profile_image=profile_image)
     if updated_user:
         return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -401,7 +428,7 @@ def delete_existing_user(id):
     deleted_user = delete_user(id)
     if deleted_user:
         return jsonify({'message': f'User with id {id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/de-activate/<int:id>', methods=['POST'])
 @jwt_required()
@@ -450,7 +477,7 @@ def deactivate_account(id):
     
     if deactivated_user is not None:
         return jsonify({'message': f'User with id {id} deactivated successfully!'}), Status.HTTP_200_OK
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
     
 @user_routes.route('/activate/<int:id>', methods=['GET'])
 @jwt_required()
@@ -486,7 +513,7 @@ def activate_account(id):
     # Test the following logic:
     if activated_user is not None:
         return jsonify({'message': f'User with id {id} activated successfully!'}), Status.HTTP_200_OK
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/suspend/<int:id>', methods=['POST'])
 @jwt_required()
@@ -541,7 +568,7 @@ def suspend_account(id):
     # User exists check:
     if suspended_user is not None:
         return jsonify({'message': f'User with id {id} Suspended successfully!'}), Status.HTTP_200_OK
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/un-suspend/<int:id>', methods=['POST'])
 @jwt_required()
@@ -596,7 +623,7 @@ def unsuspend_account(id):
     # User exists check:
     if unsuspended_user is not None:
         return jsonify({'message': f'User with id {id} un-suspended successfully!'}), Status.HTTP_200_OK
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 @user_routes.route('/change-password/<int:id>', methods=['POST'])
 @jwt_required()
@@ -651,12 +678,12 @@ def change_user_password(id):
     changed_user_password = change_password(user_id=id, prev_password=prev_pass, new_password=new_pass)
     
     if not changed_user_password:
-        return jsonify({'message': 'New password and previous password do not match!'}), Status.HTTP_400_BAD_REQUEST
+        return jsonify({'error': 'New password and previous password do not match!'}), Status.HTTP_400_BAD_REQUEST
     
     if changed_user_password is not None:
         return jsonify({'message': f'Password change operation for User with id {id} successful!'}), Status.HTTP_200_OK
     
-    return jsonify({'message': 'User not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'User not found'}), Status.HTTP_404_NOT_FOUND
 
 # -- Auth Routes -- #
 
@@ -703,7 +730,7 @@ def login():
     if is_authorized:
         return jsonify(access_token=token), Status.HTTP_200_OK
     
-    return jsonify({'message': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
+    return jsonify({'error': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
 
 # -- Forgot Password -- #
 
