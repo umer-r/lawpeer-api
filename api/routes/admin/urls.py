@@ -1,14 +1,29 @@
-"""
-    DESC:
-        Blueprint for Admin related routes.
+"""    
+  Blueprint (urls) file; for Admin related routes.
         
-    TODO:   1 - Add JWT logic secure on all routes (Only admins can access these routes).   - [DONE]
-            2 - Add DOC strings on each func.                                               - [DONE]
-            3 - Implement Super admin logic.                                                - [DONE]
-            4 - Test each of the following routes.                                          - [DONE]
-            5 - Omit sensitive fields.                                                      - []
-            6 - Move access control to decorators.                                          - [DONE]
-            7 - Move generate_access_token to utils.                                        - [DONE]
+  External Libraries:
+    - flask: A micro web framework for Python.
+    - flask_jwt_extended: An extension for Flask that adds JWT support to your application.
+    - flask_mail: An extension for Flask that adds email sending capabilities to your application.
+    - flasgger: An extension for Flask that provides Swagger documentation and UI integration.
+
+  Function Names:
+    - create_new_admin:       creates new admin, AC: super_admin_required, MANDATORY: email, password.
+    - all_admins:             get all admins from database, AC: admin_required.
+    - get_admin:              Get single admin by ID, AC: admin required.
+    - update_existing_admin:  Update admin by ID, AC: super_or_current_admin_required.
+    - delete_existing_admin:  Update admin by ID, AC: super_or_current_admin_required. 
+    - login:                  Generate access_token for admin, MANDATORY: email, password.
+    - forgot_pass:            Generate otp for forget password, MANDATORY: email.
+    - password_reset:         Reset admin password: MANDATORY: email, new_password, otp.
+      
+  TODO: 1 - Add JWT logic secure on all routes (Only admins can access these routes).   - [DONE]
+        2 - Add DOC strings on each func.                                               - [DONE]
+        3 - Implement Super admin logic.                                                - [DONE]
+        4 - Test each of the following routes.                                          - [DONE]
+        5 - Omit sensitive fields.                                                      - [HALT]
+        6 - Move access control to decorators.                                          - [DONE]
+        7 - Move generate_access_token to utils.                                        - [DONE]
 """
 
 # Lib Imports
