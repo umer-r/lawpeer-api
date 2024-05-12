@@ -75,7 +75,7 @@ def create_new_admin():
     
     new_admin = create_admin(email, password, phone_number, role='admin')
     if new_admin is None:
-        return jsonify({'message': 'Admin with the same email already exists'}), Status.HTTP_409_CONFLICT
+        return jsonify({'error': 'Admin with the same email already exists'}), Status.HTTP_409_CONFLICT
     
     return jsonify(new_admin.to_dict()), Status.HTTP_200_OK
 
@@ -106,7 +106,7 @@ def all_admins():
     if admins:
         return jsonify([admin.to_dict() for admin in admins]), Status.HTTP_200_OK
     
-    return jsonify({'message': 'No admin found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'No admin found'}), Status.HTTP_404_NOT_FOUND
 
 @admin_routes.route('/<int:id>', methods=['GET'])
 @jwt_required()
@@ -141,7 +141,7 @@ def get_admin(id):
     if admin:
         return jsonify(admin.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 
 @admin_routes.route('/<int:id>', methods=['PUT'])
 @jwt_required()
@@ -185,7 +185,7 @@ def update_existing_admin(id):
     if updated_admin:
         return jsonify(updated_admin.to_dict()), Status.HTTP_200_OK
     
-    return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 
 @admin_routes.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -220,7 +220,7 @@ def delete_existing_admin(id):
     if deleted_admin:
         return jsonify({'message': f'Admin with id {id} deleted successfully!'}), Status.HTTP_204_NO_CONTENT
     
-    return jsonify({'message': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
+    return jsonify({'error': 'Admin not found'}), Status.HTTP_404_NOT_FOUND
 
 # -- Auth Routes -- #
 
@@ -268,7 +268,7 @@ def login():
     if is_authorized:
         return jsonify(access_token=token), Status.HTTP_200_OK
     
-    return jsonify({'message': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
+    return jsonify({'error': 'Invalid credentials'}), Status.HTTP_401_UNAUTHORIZED
 
 @admin_routes.route('/forgot-password-otp', methods=['POST'])
 @check_mandatory(['email'])
