@@ -386,9 +386,10 @@ def update_existing_user(id):
     """
 
     data = request.form
+    license_image = request.files.get('license_image')
     profile_image = request.files.get('profile_image')
     
-    updated_user = update_user(id, profile_image=profile_image, **data)
+    updated_user = update_user(id, license_image=license_image, profile_image=profile_image, **data)
     if updated_user:
         return jsonify(updated_user.to_dict()), Status.HTTP_200_OK
     

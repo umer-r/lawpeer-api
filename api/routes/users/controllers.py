@@ -91,14 +91,13 @@ def get_all_users():
 
 def update_user(user_id, 
                 # User Related Fields:
-                profile_image=None, email=None, username=None,
-                dob=None, country=None, phone_number=None,
+                license_image=None, profile_image=None, email=None, 
+                username=None, dob=None, country=None, phone_number=None,
                 first_name=None, last_name=None, cnic=None,
                 is_active=None, is_suspended=None, status=None,
                 reason=None, address=None, city=None,
                 # Lawyer Specific Fields:
                 about=None, bar_voter_number=None, experience_years=None,
-                license_image=None,
                 # Client Specific fields:
                 occupation=None, nationality=None,
                 # Location Fields:
@@ -180,6 +179,7 @@ def update_user(user_id,
                     lawyer.experience_years = experience_years
                 if license_image:
                     UPLOAD_FOLDER = get_upload_folder()
+                    print("working")
                     filename = secure_filename(rename_license_image(license_image))
                     if allowed_file(filename):
                         license_image_path = os.path.join(UPLOAD_FOLDER, filename)
