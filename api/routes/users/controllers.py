@@ -126,6 +126,10 @@ def update_user(user_id,
             user.dob = dob_date.date()
         if country:
             user.country = country
+        if city:
+            user.city = city
+        if cnic:
+            user.cnic = cnic
         if phone_number:
             user.phone_number = phone_number
         if first_name:
