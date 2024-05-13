@@ -130,14 +130,15 @@ def create_new_lawyer():
     country = data.get('country')
     phone_number = data.get('phone_number')
     address = data.get('address')
-    bar_association_id = data.get('bar_association_id')
+    cnic = data.get('cnic')
+    bar_voter_number = data.get('bar_voter_number')
     experience_years = data.get('experience_years')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
     profile_image = request.files.get('profile_pic')
     
 
-    new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, latitude, longitude, profile_image, role='lawyer', bar_association_id=bar_association_id, experience_years=experience_years)
+    new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, cnic, latitude, longitude, profile_image, role='lawyer', bar_voter_number=bar_voter_number, experience_years=experience_years)
     if new_lawyer is None:
         return jsonify({'error': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
     
