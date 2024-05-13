@@ -25,7 +25,7 @@ from api.utils.helper import allowed_file, get_upload_folder, rename_profile_ima
 
 # -- General User Controller -- #
 
-def create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, cnic, bar_voter_number=None, latitude=None, longitude=None, profile_image=None, role=None, **kwargs):
+def create_user(email, username, password, first_name, last_name, phone_number, address, cnic, bar_voter_number=None, latitude=None, longitude=None, profile_image=None, role=None, **kwargs):
     
     # Check for duplicate email or username.
     if User.query.filter_by(email=email).first() or User.query.filter_by(username=username).first():
@@ -35,11 +35,11 @@ def create_user(email, username, password, first_name, last_name, dob, country, 
     hashed_password = hash_password(password=password)
     
     if role == 'lawyer':
-        new_user = Lawyer(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, dob=dob, country=country, phone_number=phone_number, address=address, cnic=cnic, bar_voter_number=bar_voter_number **kwargs)
+        new_user = Lawyer(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, phone_number=phone_number, address=address, cnic=cnic, bar_voter_number=bar_voter_number, **kwargs)
     elif role == 'client':
-        new_user = Client(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, dob=dob, country=country, phone_number=phone_number, address=address, cnic=cnic, **kwargs)
+        new_user = Client(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, phone_number=phone_number, address=address, cnic=cnic, **kwargs)
     else:
-        new_user = User(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name, dob=dob, country=country, phone_number=phone_number, address=address, cnic=cnic, **kwargs)
+        return False
     
     UPLOAD_FOLDER = get_upload_folder()
     if profile_image:

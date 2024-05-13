@@ -90,7 +90,7 @@ user_routes = Blueprint('users', __name__)
 
 @user_routes.route('/lawyer', methods=['POST'])
 @swag_from(methods=['POST']) 
-@check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'])
+@check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address', 'cnic', 'bar_voter_number', 'longitude', 'latitude'])
 def create_new_lawyer():
     """
     Endpoint to create a new lawyer.
@@ -126,21 +126,24 @@ def create_new_lawyer():
     password = data.get('password')
     first_name = data.get('first_name')
     last_name = data.get('last_name')
-    dob = data.get('dob')
-    country = data.get('country')
     phone_number = data.get('phone_number')
     address = data.get('address')
     cnic = data.get('cnic')
     bar_voter_number = data.get('bar_voter_number')
-    experience_years = data.get('experience_years')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
     profile_image = request.files.get('profile_pic')
-    
 
-    new_lawyer = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, cnic, latitude, longitude, profile_image, role='lawyer', bar_voter_number=bar_voter_number, experience_years=experience_years)
+    new_lawyer = create_user(email=email, username=username, password=password, 
+                             first_name=first_name, last_name=last_name, phone_number=phone_number, 
+                             address=address, cnic=cnic, latitude=latitude, 
+                             longitude=longitude, profile_image=profile_image, role='lawyer', 
+                             bar_voter_number=bar_voter_number)
     if new_lawyer is None:
         return jsonify({'error': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
+    
+    if not new_lawyer:
+        return jsonify({'error': 'Error while saving the user'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
     
     returned_lawyer = omit_user_sensitive_fields(new_lawyer)
     return jsonify(returned_lawyer), Status.HTTP_200_OK
@@ -190,7 +193,7 @@ def filter_lawyers():
 
 @user_routes.route('/client', methods=['POST'])
 @swag_from(methods=['POST'])
-@check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address'])
+@check_mandatory(['email', 'username', 'password', 'first_name', 'last_name', 'address', 'cnic', 'longitude', 'latitude'])
 def create_new_client():
     """
     Endpoint to create a new client.
@@ -226,16 +229,23 @@ def create_new_client():
     password = data.get('password')
     first_name = data.get('first_name')
     last_name = data.get('last_name')
-    dob = data.get('dob')
-    country = data.get('country')
     phone_number = data.get('phone_number')
+    cnic = data.get('cnic')
     address = data.get('address')
-    case_details = data.get('case_details')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
     profile_image = request.files.get('profile_pic')
 
-    new_client = create_user(email, username, password, first_name, last_name, dob, country, phone_number, address, profile_image, role='client', case_details=case_details)
+    new_client = create_user(email=email, username=username, password=password, cnic=cnic,
+                             first_name=first_name, last_name=last_name, phone_number=phone_number, 
+                             address=address, profile_image=profile_image, 
+                             latitude=latitude, longitude=longitude, role='client')
+    
     if new_client is None:
         return jsonify({'error': 'User with the same email or username already exists'}), Status.HTTP_409_CONFLICT
+    
+    if not new_client:
+        return jsonify({'error': 'Error while saving the user'}), Status.HTTP_500_INTERNAL_SERVER_ERROR
     
     # Remove sensitive fields
     returned_client = omit_user_sensitive_fields(new_client)
