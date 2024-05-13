@@ -98,6 +98,22 @@ def rename_profile_image(profile_image):
     new_filename = f"{current_time}{extension}"
     return new_filename
 
+def rename_license_image(profile_image):
+    """
+        Rename the profile image with the current date and time.
+
+        Args:
+            profile_image (FileStorage): The profile image file.
+
+        Returns:
+            str: The new filename with the current date and time.
+    """
+    
+    filename, extension = os.path.splitext(profile_image.filename)
+    current_time = datetime.now().strftime("Lawpeer_Profile_%Y%m%d%H%M%S")
+    new_filename = f"{current_time}{extension}"
+    return new_filename
+
 def rename_document(file):
     """
     Rename a document file with a timestamp prefix.

@@ -47,11 +47,11 @@ class User(db.Model):
     profile_image = db.Column(db.String(255))   # Store image path
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
+    cnic = db.Column(db.String(30))
     address = db.Column(db.String(150)) # User added address
     dob = db.Column(db.Date)
     phone_number = db.Column(db.String(20))
     role = db.Column(db.String(50))  # Role can be 'lawyer' or 'client'
-    
 
     @hybrid_property
     def role_type(self):
@@ -120,8 +120,9 @@ class Lawyer(User):
     
     # Additional fields specific to Lawyer
     about = db.Column(db.Text)
-    bar_association_id = db.Column(db.String(50))
+    bar_voter_number = db.Column(db.String(50))
     experience_years = db.Column(db.Integer)
+    license_image = db.Column(db.String(255))
     
     # Relationship with skills
     skills = db.relationship('Skill', secondary=lawyer_skills, backref=db.backref('lawyers', lazy='dynamic'))
@@ -141,10 +142,8 @@ class Client(User):
     id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     
     # Additional fields specific to Client
-    case_details = db.Column(db.Text)
-
-    # # Review provied relationship
-    # reviews = db.relationship('Review', backref='client_association', foreign_keys='Review.client_id')
+    occupation = db.Column(db.String(100))
+    nationality = db.Column(db.String(100))
 
     __mapper_args__ = {
         'polymorphic_identity': 'client',
@@ -153,4 +152,3 @@ class Client(User):
 
     def __repr__(self):
         return f"<Client {self.email}>"
-      

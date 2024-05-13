@@ -11,6 +11,7 @@
 # Lib Imports:
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, func
+from datetime import datetime
 import os
 
 # Module Imports:
@@ -18,7 +19,7 @@ from api.database import db
 from api.models.user import User, Lawyer, Client
 from api.models.skill import Skill
 from api.utils.hasher import hash_password, verify_password
-from api.utils.helper import allowed_file, get_upload_folder, rename_profile_image
+from api.utils.helper import allowed_file, get_upload_folder, rename_profile_image, rename_license_image
 
 # ----------------------------------------------- #
 
@@ -88,15 +89,21 @@ def get_user_account_by_jwt(id):
 def get_all_users():
     return User.query.all()
 
-def update_user(user_id, profile_image=None, email=None,
-                username=None, dob=None, country=None, 
-                phone_number=None, first_name=None, last_name=None, 
-                is_active=None, is_suspended=None, status=None, 
-                reason=None, address=None, case_details=None,
-                bar_association_id=None, experience_years=None,
+def update_user(user_id, 
+                # User Related Fields:
+                profile_image=None, email=None, username=None,
+                dob=None, country=None, phone_number=None,
+                first_name=None, last_name=None, cnic=None,
+                is_active=None, is_suspended=None, status=None,
+                reason=None, address=None, city=None,
+                # Lawyer Specific Fields:
+                about=None, bar_voter_number=None, experience_years=None,
+                license_image=None,
+                # Client Specific fields:
+                occupation=None, nationality=None,
+                # Location Fields:
                 longitude=None, latitude=None,
                 **kwargs):
-
     user = User.query.get(user_id)
     if user:
         # Update profile image if provided
@@ -115,7 +122,8 @@ def update_user(user_id, profile_image=None, email=None,
         if username:
             user.username = username
         if dob:
-            user.dob = dob
+            dob_date = datetime.fromisoformat(dob[:-1])
+            user.dob = dob_date.date()
         if country:
             user.country = country
         if phone_number:
@@ -141,10 +149,13 @@ def update_user(user_id, profile_image=None, email=None,
         
         # Role specific fields:
         ## Update client specific fields
-        if case_details and user.role == 'client':
+        if user.role == 'client':
             client = Client.query.filter_by(id=user_id).first()
             if client:
-                client.case_details = case_details
+                if occupation:
+                    client.occupation = occupation
+                if occupation:
+                    client.nationality = nationality
                 
         ## update location related fields:
         if longitude and latitude:
@@ -156,12 +167,20 @@ def update_user(user_id, profile_image=None, email=None,
         ## Update Lawyer specific fields:
         if user.role == 'lawyer':
             lawyer = Lawyer.query.filter_by(id=user_id).first()
-            if bar_association_id:
-                if lawyer:
-                    lawyer.bar_association_id = bar_association_id
-            if experience_years:
-                if lawyer:
+            if lawyer:
+                if about:
+                    lawyer.about = about
+                if bar_voter_number:
+                    lawyer.bar_voter_number = bar_voter_number
+                if experience_years:
                     lawyer.experience_years = experience_years
+                if license_image:
+                    UPLOAD_FOLDER = get_upload_folder()
+                    filename = secure_filename(rename_license_image(license_image))
+                    if allowed_file(filename):
+                        license_image_path = os.path.join(UPLOAD_FOLDER, filename)
+                        license_image.save(license_image_path)
+                        lawyer.license_image = os.path.join('/static', filename).replace('\\', '/')
         
         db.session.commit()
         return user
