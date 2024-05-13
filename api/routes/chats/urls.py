@@ -162,13 +162,13 @@ def handle_send_message(data):
     user_id = get_jwt_identity().get('id')
     if check_room(room, user_id):
         join_room(room)
-        save_message(room_name=room, message_content=message_content, user_id=user_id)
-        emit("send_message", 
-             {  "status": "message sent", 
-                "success": True,
-                "from": user_id, 
-                "message": message_content, 
-                "room": room }, 
+        message = save_message(room_name=room, message_content=message_content, user_id=user_id)
+        emit("send_message", message.to_dict(),
+            #  {  "status": "message sent", 
+            #     "success": True,
+            #     "from": user_id, 
+            #     "message": message_content, 
+            #     "room": room }, 
         to=room)
     else:
         emit("send_message", {"error": "Chat room not accessible.", "success": False})

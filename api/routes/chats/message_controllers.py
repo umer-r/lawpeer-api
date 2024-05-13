@@ -38,6 +38,7 @@ def save_message(room_name, message_content, user_id):
         message = Message(sender_id=user_id, sender_name=sender_name, sender_profile_image=sender_profile_image, content=message_content, chat_room_id=room_id)
         db.session.add(message)
         db.session.commit()
+        return message
     
 def get_room_messages_by_id(id):
     return Message.query.filter_by(chat_room_id=id).all()
